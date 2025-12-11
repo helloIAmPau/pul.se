@@ -9,6 +9,7 @@ copy src /source/src
 
 run cd /source && cargo build --release
 
+expose 30000-31000
 cmd cd /source && cargo watch -x run
 
 from rust:1.91-slim
@@ -16,4 +17,5 @@ from rust:1.91-slim
 run apt update && apt install -y libavformat-dev libavcodec-dev libavutil-dev libavfilter-dev libavdevice-dev
 copy --from=builder /source/target/release /app
 
+expose 30000-31000
 cmd cd /app && ./remuxer

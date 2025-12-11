@@ -1,0 +1,13 @@
+{
+  "name": "@pul.se/streams",
+  "version": "0.0.0",
+  "scripts": {
+    "build": "esbuild index.js --bundle --outdir=dist --platform=node --target=node24.11 --sourcemap",
+    "develop": "npm run build && concurrently 'npm run build -- --watch' 'node --watch dist/index.js'"
+  },
+  "devDependencies": {
+    "concurrently": "9.2.1",
+    "esbuild": "0.27.1",
+    "express": "5.2.1"
+  }
+}

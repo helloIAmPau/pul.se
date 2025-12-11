@@ -1,10 +1,53 @@
 services:
+  ingress:
+    image: 'caddy:2.10.2-alpine'
+    ports:
+      - '80:80'
+      - '443:443'
+    configs:
+      - source: 'caddyfile'
+        target: '/etc/caddy/Caddyfile'
+    networks:
+      - 'frontend'
+  streams:
+    image: 'pul.se/streams:0.0.0'
+    build:
+      dockerfile: 'Dockerfile.node'
+      args:
+        service: 'streams'
+    volumes:
+      - './data/segments:/segments'
+    networks:
+      - 'frontend'
+  web:
+    image: 'pul.se/web:0.0.0'
+    build:
+      dockerfile: 'Dockerfile.node'
+      args:
+        service: 'web'
+    networks:
+      - 'frontend'
   remuxer:
     image: 'pul.se/remuxer:0.0.0'
     ports:
       - '30000-31000:30000-31000' # it could be better to have a sort of load balacer for streams and to expose only the default rtmp port 1935
     volumes:
-      - './data/remuxer/segments:/segments'
+      - './data/segments:/segments'
     build:
       dockerfile: '../Dockerfile.remuxer'
       context: './remuxer'
+    networks:
+      - 'frontend'
+
+networks:
+  frontend:
+  backend:
+  
+configs:
+  caddyfile:
+    content: |
+      ${APP_HOST} {
+        reverse_proxy http://web
+
+        reverse_proxy /streams/* http://streams
+      }

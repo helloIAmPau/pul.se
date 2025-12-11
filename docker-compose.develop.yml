@@ -1,4 +1,14 @@
 services:
+  streams:
+    build:
+      target: 'builder'
+    volumes:
+      - './workspaces:/source/workspaces'
+  web:
+    build:
+      target: 'builder'
+    volumes:
+      - './workspaces:/source/workspaces'
   remuxer:
     build:
       target: 'builder'

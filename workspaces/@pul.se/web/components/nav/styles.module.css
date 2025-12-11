@@ -1,0 +1,10 @@
+.wrapper {
+  width: 100%;
+  height: calc(3 * var(--base-unit));
+}
+
+.container {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}

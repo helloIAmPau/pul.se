@@ -1,0 +1,11 @@
+.app {
+  height: 100svh;
+  width: 100vw;
+
+  background-color: var(--color-background);
+  font-family: var(--font);
+}
+
+.wrapper {
+  height: calc(100% - calc(3 * var(--base-unit)));
+}
