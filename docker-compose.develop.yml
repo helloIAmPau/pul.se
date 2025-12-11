@@ -1,0 +1,6 @@
+services:
+  remuxer:
+    build:
+      target: 'builder'
+    volumes:
+      - './remuxer:/source'

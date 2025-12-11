@@ -1,0 +1,11 @@
+{
+  "name": "@pul.se/repo",
+  "version": "0.0.0",
+  "scripts": {
+    "start": "docker compose up --build",
+    "develop": "docker compose -f docker-compose.yml -f docker-compose.develop.yml up --build"
+  },
+  "workspaces": [
+    "./workspaces/@pul.se/*"
+  ]
+}

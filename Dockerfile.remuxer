@@ -1,0 +1,19 @@
+from rust:1.91-slim as builder
+
+run apt update && apt install -y pkg-config libavformat-dev libavcodec-dev libavutil-dev libavfilter-dev libavdevice-dev clang
+run cargo install cargo-watch
+
+copy Cargo.toml /source/Cargo.toml
+copy Cargo.lock /source/Cargo.lock
+copy src /source/src
+
+run cd /source && cargo build --release
+
+cmd cd /source && cargo watch -x run
+
+from rust:1.91-slim
+
+run apt update && apt install -y libavformat-dev libavcodec-dev libavutil-dev libavfilter-dev libavdevice-dev
+copy --from=builder /source/target/release /app
+
+cmd cd /app && ./remuxer

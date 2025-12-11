@@ -1,0 +1,10 @@
+services:
+  remuxer:
+    image: 'pul.se/remuxer:0.0.0'
+    ports:
+      - '30000-31000:30000-31000' # it could be better to have a sort of load balacer for streams and to expose only the default rtmp port 1935
+    volumes:
+      - './data/remuxer/segments:/segments'
+    build:
+      dockerfile: '../Dockerfile.remuxer'
+      context: './remuxer'
