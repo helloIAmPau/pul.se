@@ -1,2 +1,5 @@
 .theater {
+  display: flex;
+  flex-direction: column;
+  gap: calc(2 * var(--base-unit));
 }

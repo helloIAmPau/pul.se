@@ -15,15 +15,7 @@
   --color-dark-text: #F0F6FC;
   --color-dark-text-secondary: #8B949E;
 
-  /* defaulted to light theme. needs a context here */
-  --color-background: var(--color-light-background);
-  --color-surface: var(--color-light-surface);
-  --color-border: var(--color-light-border);
-  --color-text: var(--color-light-text);
-  --color-text-secondary: var(--color-light-text-secondary);
-
   --border-radius: 8px;
-  --border: 1px solid var(--color-border);
 
   --font: 'Inter Variable', sans-serif;
   --font-title: 'Space Grotesk Variable', sans-serif;

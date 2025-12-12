@@ -1,0 +1,5 @@
+.header {
+  font-family: var(--font-title);
+  font-weight: var(--weight-title);
+  font-size: calc(1.75 * var(--base-unit));
+}

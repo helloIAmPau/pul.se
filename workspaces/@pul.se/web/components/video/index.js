@@ -1,10 +1,13 @@
 import { useLayoutEffect, useRef } from 'react';;
+import { useStream } from '../../contexts/stream';
+
 import { Hls } from 'hls.js';
 
-import { wrapper } from './styles.module.css';
+import { wrapper, video } from './styles.module.css';
 
 export default function Video({ url }) {
   const ref = useRef();
+  const { source } = useStream();
 
   useLayoutEffect(function() {
     if(ref.current == null) {
@@ -21,13 +24,13 @@ export default function Video({ url }) {
       });
     });
 
-    hls.loadSource(url);
+    hls.loadSource(source);
     hls.attachMedia(video);
-  }, [ ref, url ]);
+  }, [ ref, source ]);
 
   return (
     <div className={ wrapper }>
-      <video ref={ ref } controls />
+      <video ref={ ref } className={ video } controls />
     </div>
   );
 };

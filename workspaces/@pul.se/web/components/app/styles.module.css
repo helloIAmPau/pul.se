@@ -4,8 +4,10 @@
 
   background-color: var(--color-background);
   font-family: var(--font);
+  color: var(--color-text);
 }
 
 .wrapper {
-  height: calc(100% - calc(3 * var(--base-unit)));
+  height: calc(100% - calc(4 * var(--base-unit)));
+  margin-top: var(--base-unit);
 }

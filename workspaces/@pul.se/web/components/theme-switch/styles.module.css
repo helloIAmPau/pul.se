@@ -1,0 +1,8 @@
+.theme_switch {
+  height: calc(2 * var(--base-unit));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+}
