@@ -1,6 +1,7 @@
 services:
   ingress:
     image: 'caddy:2.10.2-alpine'
+    restart: 'always'
     ports:
       - '80:80'
       - '443:443'
@@ -11,6 +12,7 @@ services:
       - 'frontend'
   streams:
     image: 'pul.se/streams:0.0.0'
+    restart: 'always'
     build:
       dockerfile: 'Dockerfile.node'
       args:
@@ -19,8 +21,23 @@ services:
       - './data/segments:/segments'
     networks:
       - 'frontend'
+  graphql:
+    image: 'pul.se/graphql:0.0.0'
+    restart: 'always'
+    build:
+      dockerfile: 'Dockerfile.node'
+      args:
+        service: 'graphql'
+    environment:
+      - 'POSTGRES_PASSWORD=${POSTGRES_PASSWORD}'
+      - 'POSTGRES_USER=${POSTGRES_USER}'
+      - 'POSTGRES_DB=${POSTGRES_DB}'
+    networks:
+      - 'frontend'
+      - 'backend'
   web:
     image: 'pul.se/web:0.0.0'
+    restart: 'always'
     build:
       dockerfile: 'Dockerfile.node'
       args:
@@ -29,6 +46,7 @@ services:
       - 'frontend'
   remuxer:
     image: 'pul.se/remuxer:0.0.0'
+    restart: 'always'
     ports:
       - '30000-31000:30000-31000' # it could be better to have a sort of load balacer for streams and to expose only the default rtmp port 1935
     volumes:
@@ -38,6 +56,17 @@ services:
       context: './remuxer'
     networks:
       - 'frontend'
+  postgres:
+    image: 'postgres:18.1-alpine'
+    restart: 'always'
+    volumes:
+      - './data/postgres:/var/lib/postgresql/18/docker'
+    environment:
+      - 'POSTGRES_PASSWORD=${POSTGRES_PASSWORD}'
+      - 'POSTGRES_USER=${POSTGRES_USER}'
+      - 'POSTGRES_DB=${POSTGRES_DB}'
+    networks:
+      - 'backend'
 
 networks:
   frontend:
@@ -50,4 +79,5 @@ configs:
         reverse_proxy http://web
 
         reverse_proxy /streams/* http://streams
+        reverse_proxy /graphql http://graphql
       }

@@ -3,7 +3,7 @@ import { ThemeProvider } from '../../contexts/theme';
 import Nav from '../nav';
 import Scrollable from '../scrollable';
 import Container from '../container';
-import Theater from '../theater';
+import Router from '../router';
 
 import { app, wrapper } from './styles.module.css';
 
@@ -15,7 +15,7 @@ export default function() {
         <div className={ wrapper }>
           <Scrollable>
             <Container>
-              <Theater />
+              <Router />
             </Container>
           </Scrollable>
         </div>

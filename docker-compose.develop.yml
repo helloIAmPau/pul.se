@@ -1,4 +1,9 @@
 services:
+  graphql:
+    build:
+      target: 'builder'
+    volumes:
+      - './workspaces:/source/workspaces'
   streams:
     build:
       target: 'builder'

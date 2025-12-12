@@ -26,6 +26,10 @@ export default function Video({ url }) {
 
     hls.loadSource(source);
     hls.attachMedia(video);
+
+    return function() {
+      hls.destroy();
+    };
   }, [ ref, source ]);
 
   return (
