@@ -1,0 +1,27 @@
+.wrapper {
+  all: unset;
+  user-select: none;
+  cursor: pointer;
+  font-weight: var(--weight-label);
+  background-color: var(--color-accent);
+  color: #FFFFFF;
+  display: flex;
+  padding-top: calc(0.5 * var(--base-unit));
+  padding-bottom: calc(0.5 * var(--base-unit));
+  padding-left: calc(4 * var(--base-unit));
+  padding-right: calc(4 * var(--base-unit));
+  border-radius: var(--border-radius);
+  border: 1px solid var(--color-accent);
+  align-items: center;
+  justify-content: center;
+}
+
+.empty {
+  background-color: var(--color-background);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.empty:hover {
+  border: 1px solid var(--color-text);
+}

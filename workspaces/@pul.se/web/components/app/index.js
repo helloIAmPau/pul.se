@@ -1,4 +1,5 @@
 import { ThemeProvider } from '../../contexts/theme';
+import { AuthProvider } from '../../contexts/auth';
 
 import Nav from '../nav';
 import Scrollable from '../scrollable';
@@ -9,17 +10,19 @@ import { app, wrapper } from './styles.module.css';
 
 export default function() {
   return (
-    <ThemeProvider>
-      <div className={ app }>
-        <Nav />
-        <div className={ wrapper }>
-          <Scrollable>
-            <Container>
-              <Router />
-            </Container>
-          </Scrollable>
+    <AuthProvider>
+      <ThemeProvider>
+        <div className={ app }>
+          <Nav />
+          <div className={ wrapper }>
+            <Scrollable>
+              <Container>
+                <Router />
+              </Container>
+            </Scrollable>
+          </div>
         </div>
-      </div>
-    </ThemeProvider>
+      </ThemeProvider>
+    </AuthProvider>
   );
 };

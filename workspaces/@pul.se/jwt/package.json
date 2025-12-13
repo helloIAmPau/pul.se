@@ -1,0 +1,7 @@
+{
+  "name": "@pul.se/jwt",
+  "version": "0.0.0",
+  "devDependencies": {
+    "jsonwebtoken": "9.0.3"
+  }
+}
