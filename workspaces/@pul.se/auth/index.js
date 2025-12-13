@@ -62,12 +62,7 @@ insert into users (email) values ($1) on conflict (email) do update set email = 
     return sign(rows[0]);
   }).then(function(token) {
     response.cookie('ACCESS_TOKEN', token, { httpOnly: true });
-    response.type('text/html');
-    response.send(`
-<script>
-  window.location = '${ process.env.APP_HOST }${ state.returnTo }';
-</script>
-    `);
+    response.redirect(`${ process.env.APP_HOST }${ state.returnTo }`);
   });
 
 });
