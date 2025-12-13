@@ -5,8 +5,9 @@ env service=${service}
 
 copy package.json /source/package.json
 copy package-lock.json /source/package-lock.json
-copy ./workspaces /source/workspaces
 run cd /source && npm install
+
+copy ./workspaces /source/workspaces
 
 run cd /source && npm --workspace=@pul.se/${service} run build
 
