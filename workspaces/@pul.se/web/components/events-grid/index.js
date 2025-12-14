@@ -44,7 +44,7 @@ query {
   return (
     <Section>
       <SectionTitle title='Events'>
-        <Button secondary>Create Event</Button>
+        <Button href='/admin/events/edit' secondary>Create Event</Button>
       </SectionTitle>
       <Grid onData={ onData } columns={ columns } />
     </Section>

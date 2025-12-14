@@ -1,0 +1,16 @@
+.section {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--base-unit);
+  padding-top: var(--base-unit);
+}
+
+.title_section {
+  width: 30%;
+  font-weight: var(--weight-title);
+  user-select: none;
+}
+
+.content_section {
+  flex: 1;
+}

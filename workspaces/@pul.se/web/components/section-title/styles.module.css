@@ -4,6 +4,17 @@
   justify-content: space-between;
 }
 
+.header_wrapper {
+  display: flex;
+  align-items: center;
+  gap: calc(0.75 * var(--base-unit));
+}
+
+.back_button {
+  cursor: pointer;
+  user-select: none;
+}
+
 .header {
   font-family: var(--font-title);
   font-weight: var(--weight-title);

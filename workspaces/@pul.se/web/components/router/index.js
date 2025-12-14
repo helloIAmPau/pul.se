@@ -8,6 +8,7 @@ import Theater from '../theater';
 import Signin from '../signin';
 import Loading from '../loading';
 import Admin from '../admin';
+import EventEditor from '../event-editor';
 
 export default function Router() {
   const { state } = useAuth();
@@ -26,7 +27,11 @@ export default function Router() {
     }
 
     return (
-      <Route path='/admin' element={ <Admin /> } />
+      <>
+        <Route path='/admin' element={ <Admin /> } />
+        <Route path='/admin/events/edit' element={ <EventEditor /> } />
+        <Route path='/admin/events/:uid/edit' element={ <EventEditor /> } />
+      </>
     );
   }, [ state ]);
 

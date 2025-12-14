@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 
 import { wrapper, empty } from './styles.module.css';
 
-export default function Button({ children, secondary, href, onClick, type='button' }) {
+export default function Button({ children, secondary, href, onClick, type='button', disabled }) {
   const navigate = useNavigate();
 
   const className = useMemo(function() {
@@ -29,6 +29,6 @@ export default function Button({ children, secondary, href, onClick, type='butto
   }, [ href, onClick, navigate ]);
 
   return (
-    <button onClick={ handler } type={ type } className={ className }>{ children }</button>
+    <button disabled={ disabled } onClick={ handler } type={ type } className={ className }>{ children }</button>
   );
 };
