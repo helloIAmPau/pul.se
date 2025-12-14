@@ -22,18 +22,12 @@ app.get('/auth/providers', function(request, response) {
 });
 
 app.get('/auth/valid', function(request, response) {
-  try {
-    verify(request.cookies.ACCESS_TOKEN);
-    response.json({
-      data: {
-        valid: true
-      }
-    });
-  } catch(error) {
-    console.log(error);
-
-    throw new Error('Unauthorized');
-  }
+  verify(request.cookies.ACCESS_TOKEN);
+  response.json({
+    data: {
+      valid: true
+    }
+  });
 });
 
 app.get('/auth/callback', function(request, response) {

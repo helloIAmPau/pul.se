@@ -6,6 +6,7 @@
     "develop": "npm run build && concurrently 'npm run build -- --watch' 'node --watch dist/index.js'"
   },
   "devDependencies": {
+    "react": "19.2.1",
     "@graphql-tools/schema": "10.0.30",
     "concurrently": "9.2.1",
     "esbuild": "0.27.1",

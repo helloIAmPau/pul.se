@@ -8,5 +8,7 @@ const pool = new Pool({
 });
 
 export const query = function(sql, variables) {
-  return pool.query(sql, variables);
+  return pool.query(sql, variables).then(function({ rows }) {
+    return rows;
+  });
 };

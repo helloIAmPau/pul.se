@@ -1,3 +1,14 @@
+scalar Timestamp
+scalar UUID
+
+type Event {
+  uid: UUID!
+  name: String!
+  description: String!
+  start_timestamp: Timestamp!
+  end_timestamp: Timestamp!
+}
+
 type Query {
-  test: Int!
+  events: [ Event ]!
 }

@@ -1,6 +1,7 @@
 import { server } from '@pul.se/http';
 import { createHandler } from 'graphql-http/lib/use/express';
 import { makeExecutableSchema } from '@graphql-tools/schema';
+import { verify } from '@pul.se/jwt';
 
 import resolvers from './resolvers';
 import typeDefs from './schema.graphql';
@@ -12,13 +13,14 @@ const schema = makeExecutableSchema({
   resolvers
 });
 
-app.post('/graphql', createHandler({
+app.post('/graphql', function(request, response, next) {
+  request.user = verify(request.cookies.ACCESS_TOKEN);
+  next();
+}, createHandler({
   schema,
-  context: function() {
+  context: function(request) {
     return {
-      user: {
-        uid: 'e3fe6712-9ca1-4f4d-835d-eecbfe989d59'
-      }
+      user: request.raw.user
     };
   }
 }));

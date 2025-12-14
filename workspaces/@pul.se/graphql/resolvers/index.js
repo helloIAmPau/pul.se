@@ -1,11 +1,7 @@
-import { query } from '@pul.se/postgres';
+import { events } from './events';
 
 export default {
   Query: {
-    test: function() {
-      return query('select 1 as test').then(function({ rows }) {
-        return rows[0].test
-      });
-    }
+    events
   }
 };
