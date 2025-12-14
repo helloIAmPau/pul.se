@@ -1,9 +1,7 @@
-import express from 'express';
+import { server, assets } from '@pul.se/http';
 
-const app = express();
+const app = server();
 
-app.use('/streams', express.static('/segments'));
+app.use('/streams', assets('/segments'));
 
-app.listen(80, '0.0.0.0', function() {
-  console.log(`${ process.env.service } started @ http://0.0.0.0`);
-});
+app.start();

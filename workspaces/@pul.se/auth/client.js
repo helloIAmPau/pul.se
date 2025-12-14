@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { client } from './http';
+import { client } from '@pul.se/http/client';
 
 export const useAuthClient = function() {
   const getProviders = useCallback(function() {

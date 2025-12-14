@@ -1,12 +1,10 @@
-import express from 'express';
+import { server } from '@pul.se/http';
 import { providers } from './providers';
-import { http } from './http';
+import { http } from '@pul.se/http/client';
 import { query } from '@pul.se/postgres';
 import { sign, verify } from '@pul.se/jwt';
-import cookieParser from 'cookie-parser';
 
-const app = express();
-app.use(cookieParser());
+const app = server();
 
 app.get('/auth/providers', function(request, response) {
   response.json({
@@ -64,19 +62,6 @@ insert into users (email) values ($1) on conflict (email) do update set email = 
     response.cookie('ACCESS_TOKEN', token, { httpOnly: true });
     response.redirect(`${ process.env.APP_HOST }${ state.returnTo }`);
   });
-
 });
 
-app.use(function(error, request, response, next) {
-  console.log(error);
-
-  response.json({
-    errors: [{
-      message: error.message
-    }]
-  });
-});
-
-app.listen(80, '0.0.0.0', function() {
-  console.log(`${ process.env.service } started @ http://0.0.0.0`);
-});
+app.start();

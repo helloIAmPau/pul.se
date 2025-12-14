@@ -1,11 +1,11 @@
-import express from 'express';
+import { server } from '@pul.se/http';
 import { createHandler } from 'graphql-http/lib/use/express';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 
 import resolvers from './resolvers';
 import typeDefs from './schema.graphql';
 
-const app = express();
+const app = server();
 
 const schema = makeExecutableSchema({
   typeDefs,
@@ -23,6 +23,4 @@ app.post('/graphql', createHandler({
   }
 }));
 
-app.listen(80, '0.0.0.0', function() {
-  console.log(`${ process.env.service } started @ http://0.0.0.0`);
-});
+app.start();

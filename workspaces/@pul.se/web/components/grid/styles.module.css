@@ -1,0 +1,44 @@
+.card {
+  padding: 0;
+  min-height: 350px;
+  display: flex;
+  justify-content: space-between;
+  flex-direction: column;
+  padding-bottom: var(--base-unit);
+}
+
+.wrapper {
+  width: 100%;
+  text-align: left;
+}
+
+.head {
+  font-size: calc(0.75 * var(--base-unit));
+  font-weight: var(--weight-title);
+  user-select: none;
+}
+
+.row {
+  border-bottom: 1px solid var(--color-border);
+
+  & > th, & > td {
+    padding-top: var(--base-unit);
+    padding-bottom: var(--base-unit);
+  }
+
+  & > th:first-child, & > td:first-child {
+    padding-left: var(--base-unit);
+  }
+
+  & > th:last-child, & > td:last-child {
+    padding-right: var(--base-unit);
+  }
+}
+
+.footer {
+  display: flex;
+  padding-top: var(--base-unit);
+  padding-right: var(--base-unit);
+  gap: var(--base-unit);
+  justify-content: flex-end;
+}

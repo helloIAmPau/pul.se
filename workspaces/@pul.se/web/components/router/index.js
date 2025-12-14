@@ -7,6 +7,7 @@ import Landing from '../landing';
 import Theater from '../theater';
 import Signin from '../signin';
 import Loading from '../loading';
+import Admin from '../admin';
 
 export default function Router() {
   const { state } = useAuth();
@@ -24,7 +25,9 @@ export default function Router() {
       );
     }
 
-    return;
+    return (
+      <Route path='/admin' element={ <Admin /> } />
+    );
   }, [ state ]);
 
   return (
