@@ -2,7 +2,7 @@
   display: flex;
   border-bottom: 1px solid var(--color-border);
   padding-bottom: var(--base-unit);
-  padding-top: var(--base-unit);
+  padding-top: calc(2 * var(--base-unit));
 }
 
 .title_section {

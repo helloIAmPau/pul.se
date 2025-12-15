@@ -11,7 +11,7 @@
     font-size: calc(0.9 * var(--base-unit));
   }
 
-  & > input, & > textarea {
+  & > input, & > textarea, & > select {
     all: unset;
     box-sizing: border-box;
     border: 1px solid var(--color-border);
@@ -21,7 +21,12 @@
     width: 100%;
   }
 
-  & > input:focus, & > textarea:focus {
+  & > input.error_border, & > textarea.error_border, & > select.error_border {
+    border: 1px solid var(--color-error);
+  }
+
+
+  & > input:focus, & > textarea:focus, & > select:focus {
     border: 1px solid var(--color-accent);
   }
 
@@ -29,4 +34,13 @@
     resize: none;
     height: calc(10 * var(--base-unit));
   }
+
+  & > select > option {
+    background-color: var(--color-background);
+  }
+}
+
+.error_message {
+  height: calc(0.75 * var(--base-unit));
+  font-size: calc(0.75 * var(--base-unit));
 }

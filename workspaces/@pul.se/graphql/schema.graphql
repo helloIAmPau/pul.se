@@ -7,8 +7,24 @@ type Event {
   description: String!
   start_timestamp: Timestamp!
   end_timestamp: Timestamp!
+  price: Float!
+  currency: String!
+}
+
+input EventInput {
+  uid: UUID
+  name: String!
+  description: String!
+  start_timestamp: Timestamp!
+  end_timestamp: Timestamp!
+  price: Float!
+  currency: String!
 }
 
 type Query {
   events: [ Event ]!
+}
+
+type Mutation {
+  updateEvent(event: EventInput!): UUID!
 }

@@ -6,8 +6,9 @@ export const useForm = function() {
   return useContext(Context);
 };
 
-export const Form = function({ children, defaults = {}, onSubmit, className = '' }) {
+export const Form = function({ children, defaults = {}, onSubmit, onValidation, className = '' }) {
   const [ values, setValues ] = useState(defaults);
+  const [ errors, setErrors ] = useState({});
   const [ isDirty, setIsDirty ] = useState(false);
   const [ isLoading, setIsLoading ] = useState(false);
 
@@ -15,6 +16,7 @@ export const Form = function({ children, defaults = {}, onSubmit, className = ''
     return {
       name,
       value: values[name] || '',
+      error: errors[name],
       onChange: function({ target }) {
         setValues({
           ...values,
@@ -24,17 +26,28 @@ export const Form = function({ children, defaults = {}, onSubmit, className = ''
         setIsDirty(true);
       }
     };
-  }, [ values ]);
+  }, [ values, errors ]);
 
   const submit = useCallback(function(evt) {
     evt.preventDefault();
     setIsLoading(true);
+    setErrors({});
 
-    onSubmit(values).finally(function() {
+    Promise.resolve().then(function() {
+      const errors = onValidation(values);
+
+      if(Object.keys(errors).length > 0) {
+        setErrors(errors);
+
+        return;
+      }
+
+      return onSubmit(values);
+    }).finally(function() {
       setIsLoading(false);
       setIsDirty(false);
     });
-  }, [ onSubmit ]);
+  }, [ onValidation, onSubmit, values ]);
 
   const value = useMemo(function() {
     return {

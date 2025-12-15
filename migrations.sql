@@ -15,7 +15,12 @@ create table if not exists events (
   description text not null,
   start_timestamp timestamp not null,
   end_timestamp timestamp not null,
+  price real not null,
+  currency text not null,
   deleted boolean not null default false
 );
+
+alter table events drop constraint if exists events_unique_uid;
+alter table events add constraint events_unique_uid unique (uid);
 
 commit;
