@@ -1,6 +1,7 @@
 from rust:1.91-slim as builder
 
-run apt update && apt install -y pkg-config libavformat-dev libavcodec-dev libavutil-dev libavfilter-dev libavdevice-dev clang
+#run apt update && apt install -y pkg-config libavformat-dev libavcodec-dev libavutil-dev libavfilter-dev libavdevice-dev clang
+run apt update && apt install -y libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-good gstreamer1.0-plugins-bad
 run cargo install cargo-watch
 
 copy Cargo.toml /source/Cargo.toml
@@ -14,7 +15,8 @@ cmd cd /source && cargo watch -x run
 
 from rust:1.91-slim
 
-run apt update && apt install -y libavformat-dev libavcodec-dev libavutil-dev libavfilter-dev libavdevice-dev
+#run apt update && apt install -y libavformat-dev libavcodec-dev libavutil-dev libavfilter-dev libavdevice-dev
+run apt update && apt install -y libgstreamer1.0 libgstreamer-plugins-base1.0  gstreamer1.0-plugins-good gstreamer1.0-plugins-bad
 copy --from=builder /source/target/release /app
 
 expose 30000-31000
