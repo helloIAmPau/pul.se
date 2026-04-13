@@ -1,0 +1,46 @@
+services:
+  remuxer:
+    image: 'pul.se/remuxer:0.0.0'
+    restart: 'always'
+    ports:
+      - '1935:1935'
+    volumes:
+      - './data/remxer/streams:/streams'
+    build:
+      context: './remuxer'
+    environment:
+      - 'POSTGRES_PASSWORD=${POSTGRES_PASSWORD}'
+      - 'POSTGRES_USER=${POSTGRES_USER}'
+      - 'POSTGRES_DB=${POSTGRES_DB}'
+      - 'STORAGE_ACCESS_KEY=${STORAGE_ACCESS_KEY}'
+      - 'STORAGE_SECRET_KEY=${STORAGE_SECRET_KEY}'
+    networks:
+      - 'frontend'
+      - 'backend'
+  storage:
+    image: 'rustfs/rustfs:1.0.0-alpha.91'
+    restart: 'always'
+    user: 'root'
+    environment:
+      - 'RUSTFS_ACCESS_KEY=${STORAGE_ACCESS_KEY}'
+      - 'RUSTFS_SECRET_KEY=${STORAGE_SECRET_KEY}'
+    volumes:
+      - './data/rustfs/data:/data'
+      - './data/rustfs/logs:/logs'
+    networks:
+      - 'backend'
+  postgres:
+    image: 'postgres:16-alpine'
+    restart: 'always'
+    volumes:
+      - './data/postgres:/var/lib/postgresql/data'
+    environment:
+      - 'POSTGRES_PASSWORD=${POSTGRES_PASSWORD}'
+      - 'POSTGRES_USER=${POSTGRES_USER}'
+      - 'POSTGRES_DB=${POSTGRES_DB}'
+    networks:
+      - 'backend'
+
+networks:
+  frontend:
+  backend:

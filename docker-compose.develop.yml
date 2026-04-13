@@ -1,0 +1,11 @@
+services:
+  remuxer:
+    build:
+      target: 'builder'
+    volumes:
+      - './remuxer:/source'
+  storage:
+    ports:
+      - '9001:9001'
+    environment:
+      - 'RUSTFS_CONSOLE_ENABLE=true'
