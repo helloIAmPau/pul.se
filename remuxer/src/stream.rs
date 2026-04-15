@@ -4,6 +4,8 @@ use gstreamer::State::Paused;
 use gstreamer::State::Playing;
 use gstreamer::parse::launch;
 use gstreamer::glib::Error;
+use gstreamer::glib::KeyFileError;
+use gstreamer::glib::ConvertError;
 use gstreamer::Format;
 use gstreamer::Pipeline;
 use gstreamer::ClockTime;
@@ -39,13 +41,13 @@ impl StreamRegistry {
     self.streams.remove(app);
   }
 
-  pub fn get(&self, app: &str) -> Result<&Stream, std::fmt::Error> {
+  pub fn get(&self, app: &str) -> Result<&Stream, Error> {
     match self.streams.get(app) {
       Some(stream) => {
         return Ok(stream);
       },
       None => {
-        return Err(std::fmt::Error);
+        return Err(Error::new(KeyFileError::KeyNotFound, "No stream found"));
       }
     };
   }
@@ -65,18 +67,46 @@ impl Stream {
 
   pub fn new(session: &str) -> Result<Self, Error> {
     let pipeline_definition = format!("appsrc name=video_src format=time is-live=true ! h264parse ! sink.video appsrc name=audio_src format=time is-live=true ! aacparse ! sink.audio awss3hlssink name=sink bucket=\"streams\" key-prefix=\"{0}\" access-key=\"{1}\" secret-access-key=\"{2}\" force-path-style=true region=\"us-east-1\" endpoint-uri=\"http://storage:9000\"", session, Storage::get_key(), Storage::get_secret());
-    let pipeline = match launch(&pipeline_definition) {
-      Ok(pipeline) => {
-        pipeline.downcast::<Pipeline>().unwrap()
-      },
+    let pipeline_element = match launch(&pipeline_definition) {
+      Ok(element) => element,
       Err(error) => {
         return Err(error);
       }
     };
 
-    let video = pipeline.by_name("video_src").unwrap().downcast::<AppSrc>().unwrap();
+    let pipeline = match pipeline_element.downcast::<Pipeline>() {
+      Ok(pipeline) => pipeline,
+      Err(_) => {
+        return Err(Error::new(ConvertError::Failed, "Unable to downcast pipeline_element element to Pipeline"));
+      }
+    };
+
+    let video_src_element = match pipeline.by_name("video_src") {
+      Some(element) => element,
+      None => {
+        return Err(Error::new(KeyFileError::KeyNotFound, "No video source found"));
+      }
+    };
+    let video = match video_src_element.downcast::<AppSrc>() {
+      Ok(video) => video,
+      Err(_) => {
+        return Err(Error::new(ConvertError::Failed, "Unable to downcast video_src element to appsrc"));
+      }
+    };
     video.set_format(Format::Time);
-    let audio = pipeline.by_name("audio_src").unwrap().downcast::<AppSrc>().unwrap();
+
+    let audio_src_element = match pipeline.by_name("audio_src") {
+      Some(element) => element,
+      None => {
+        return Err(Error::new(KeyFileError::KeyNotFound, "No audio source found"));
+      }
+    };
+    let audio = match audio_src_element.downcast::<AppSrc>() {
+      Ok(audio) => audio,
+      Err(_) => {
+        return Err(Error::new(ConvertError::Failed, "Unable to downcast audio_src element to appsrc"));
+      }
+    };
     audio.set_format(Format::Time);
 
     let stream = Stream {
@@ -118,7 +148,14 @@ impl Stream {
 
     let mut buffer = Buffer::from_slice(data);
 
-    let buffer_mut = buffer.get_mut().unwrap();
+    let buffer_mut = match buffer.get_mut() {
+      Some(buffer_mut) => buffer_mut,
+      None => {
+        eprintln!("Failed to get mutable video buffer");
+
+        return;
+      }
+    };
     buffer_mut.set_dts(ClockTime::from_mseconds(dts));
     buffer_mut.set_pts(ClockTime::from_mseconds(pts));
 
@@ -155,7 +192,14 @@ impl Stream {
 
     let mut buffer = Buffer::from_slice(data);
 
-    let buffer_mut = buffer.get_mut().unwrap();
+    let buffer_mut = match buffer.get_mut() {
+      Some(buffer_mut) => buffer_mut,
+      None => {
+        eprintln!("Failed to get mutable audio buffer");
+
+        return;
+      }
+    };
     buffer_mut.set_pts(ClockTime::from_mseconds(pts));
 
     match self.audio.push_buffer(buffer) {
