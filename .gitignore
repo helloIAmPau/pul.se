@@ -2,3 +2,5 @@ data/
 target/
 .DS_Store
 *.swp
+dist/
+node_modules/

@@ -1,0 +1,12 @@
+:root {
+  --base-unit: 1rem;
+
+  --font: 'Inter Variable';
+}
+
+body {
+  height: 100svh;
+  width: 100%;
+
+  font-family: var(--font);
+}
