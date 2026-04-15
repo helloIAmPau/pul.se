@@ -11,13 +11,26 @@ services:
       - '80:80'
       - '443:443'
   web:
-    image: 'pul.se/graphql:0.0.0'
+    image: 'pul.se/web:0.0.0'
     restart: 'always'
     build:
       args:
         SERVICE: 'web'
     networks:
       - 'frontend'
+  graphql:
+    image: 'pul.se/graphql:0.0.0'
+    restart: 'always'
+    build:
+      args:
+        SERVICE: 'graphql'
+    environment:
+      - 'POSTGRES_PASSWORD=${POSTGRES_PASSWORD}'
+      - 'POSTGRES_USER=${POSTGRES_USER}'
+      - 'POSTGRES_DB=${POSTGRES_DB}'
+    networks:
+      - 'frontend'
+      - 'backend'
   remuxer:
     image: 'pul.se/remuxer:0.0.0'
     restart: 'always'
@@ -68,5 +81,7 @@ configs:
   caddyfile:
     content: |
       ${PULSE_HOSTNAME} {
+        reverse_proxy /graphql http://graphql
+
         reverse_proxy http://web
       }
