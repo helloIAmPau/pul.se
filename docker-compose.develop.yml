@@ -1,4 +1,12 @@
 services:
+  ingress:
+    ports:
+      - '8080:8080'
+  web:
+    build:
+      target: 'builder'
+    volumes:
+      - './workspaces:/source/workspaces'
   remuxer:
     build:
       target: 'builder'

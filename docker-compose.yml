@@ -1,4 +1,23 @@
 services:
+  ingress:
+    image: 'caddy:2.11-alpine'
+    restart: 'always'
+    configs:
+      - source: 'caddyfile'
+        target: '/etc/caddy/Caddyfile'
+    networks:
+      - 'frontend'
+    ports:
+      - '80:80'
+      - '443:443'
+  web:
+    image: 'pul.se/graphql:0.0.0'
+    restart: 'always'
+    build:
+      args:
+        SERVICE: 'web'
+    networks:
+      - 'frontend'
   remuxer:
     image: 'pul.se/remuxer:0.0.0'
     restart: 'always'
@@ -44,3 +63,10 @@ services:
 networks:
   frontend:
   backend:
+
+configs:
+  caddyfile:
+    content: |
+      ${PULSE_HOSTNAME} {
+        reverse_proxy http://web
+      }
