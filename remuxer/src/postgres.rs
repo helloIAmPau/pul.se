@@ -1,42 +1,98 @@
 use std::env::var;
+use std::fmt;
 
-use tokio::spawn;
+use deadpool_postgres::Pool;
+use deadpool_postgres::Config;
+use deadpool_postgres::Runtime;
 
-use tokio_postgres::connect;
 use tokio_postgres::NoTls;
 use tokio_postgres::Row;
-use tokio_postgres::Error;
 use tokio_postgres::types::ToSql;
 
-pub async fn query(sql: &str, params: &[&(dyn ToSql + Sync)]) -> Result<Vec<Row>, Error> {
-  let user = match var("POSTGRES_USER") {
-    Ok(val) => format!("user={}", val),
-    Err(_) => "user=postgres".to_string()
-  };
+#[derive(Debug)]
+pub enum PostgresErrorKind {
+  Pool,
+  Config,
+  Query
+}
 
-  let password = match var("POSTGRES_PASSWORD") {
-    Ok(val) => format!("password={}", val),
-    Err(_) => "".to_string()
-  };
+pub struct PostgresError {
+  kind: PostgresErrorKind,
+  message: String
+}
 
-  let dbname = match var("POSTGRES_DB") {
-    Ok(val) => format!("dbname={}", val),
-    Err(_) => "dbname=postgres".to_string()
-  };
-
-  let connection_string = format!("host=postgres {} {} {}", user, password, dbname);
-  let client = match connect(&connection_string, NoTls).await {
-    Ok((client, connection)) => {
-      spawn(async move {
-        connection.await
-      });
-
-      client
-    },
-    Err(error) => {
-      return Err(error);
+impl PostgresError {
+  pub fn new(kind: PostgresErrorKind, message: &str) -> Self {
+    return Self {
+      kind: kind,
+      message: message.to_string()
     }
-  };
+  }
+}
 
-  return client.query(sql, params).await;
+impl fmt::Display for PostgresError {
+  fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    return write!(formatter, "{:?}: {}", self.kind, self.message);
+  }
+}
+
+pub struct Postgres {
+  pool: Pool
+}
+
+impl Postgres {
+  pub fn new() -> Result<Self, PostgresError> {
+    let mut config = Config::new();
+
+    config.host = Some("postgres".to_string());
+
+    let user = match var("POSTGRES_USER") {
+      Ok(val) => val,
+      Err(_) => "postgres".to_string()
+    };
+    config.user = Some(user);
+  
+    let password = match var("POSTGRES_PASSWORD") {
+      Ok(val) => val,
+      Err(_) => "".to_string()
+    };
+    config.password = Some(password);
+  
+    let dbname = match var("POSTGRES_DB") {
+      Ok(val) => val,
+      Err(_) => "postgres".to_string()
+    };
+    config.dbname = Some(dbname);
+
+    let pool = match config.create_pool(Some(Runtime::Tokio1), NoTls) {
+      Ok(pool) => pool,
+      Err(error) => {
+        return Err(PostgresError::new(PostgresErrorKind::Config, &error.to_string()));
+      }
+    };
+
+    let db = Self {
+      pool: pool
+    };
+
+    return Ok(db);
+  }
+
+  pub async fn query(&self, sql: &str, params: &[&(dyn ToSql + Sync)]) -> Result<Vec<Row>, PostgresError> {
+    let client = match self.pool.get().await {
+      Ok(client) => client,
+      Err(error) => {
+        return Err(PostgresError::new(PostgresErrorKind::Pool, &error.to_string()));
+      }
+    };
+  
+    match client.query(sql, params).await {
+      Ok(rows) => {
+        return Ok(rows);
+      },
+      Err(error) => {
+        return Err(PostgresError::new(PostgresErrorKind::Query, &error.to_string()));
+      } 
+    };
+  }
 }
