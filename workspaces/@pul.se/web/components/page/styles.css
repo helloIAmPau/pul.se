@@ -1,12 +1,34 @@
 :root {
   --base-unit: 1rem;
 
+  --color-accent: #FF4D00;
+
+  --color-light-background: #FFFFFF;
+  --color-light-surface: #F6F8FA;
+  --color-light-border: #D0D7DE;
+  --color-light-text: #0D1117;
+  --color-light-text-secondary: #57606A;
+
+  --color-dark-background: #0D1117;
+  --color-dark-surface: #161B22;
+  --color-dark-border: #30363D;
+  --color-dark-text: #F0F6FC;
+  --color-dark-text-secondary: #8B949E;
+
   --font: 'Inter Variable';
+  --font-title: 'Space Grotesk Variable', sans-serif;
+
+  --border-radius: 8px;
+
+  --weight-regular: 400;
+  --weight-label: 500;
+  --weight-title: 600;
 }
 
-body {
+#root {
   height: 100svh;
   width: 100%;
 
   font-family: var(--font);
+  font-weight: var(--weight-regular);
 }

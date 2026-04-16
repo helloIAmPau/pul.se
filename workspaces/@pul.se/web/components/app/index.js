@@ -1,5 +1,11 @@
+import { ThemeProvider } from '../../contexts/theme';
+
+import Router from '../router';
+
 export default function App() {
   return (
-    <h1>Hello</h1>
+    <ThemeProvider>
+      <Router />
+    </ThemeProvider>
   );
 };
