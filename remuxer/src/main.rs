@@ -9,6 +9,7 @@ use rtmp_rs::ServerConfig;
 use protocol::Protocol;
 use stream::Stream;
 use storage::Storage;
+use postgres::Postgres;
 
 #[tokio::main]
 async fn main() {
@@ -31,8 +32,17 @@ async fn main() {
     _ => {}
   };
 
+  let postgres = match Postgres::new() {
+    Ok(postgres) => postgres,
+    Err(error) => {
+      eprintln!("Unable to create default postgres pool - {}", error);
+
+      return;
+    }
+  };
+  let protocol = Protocol::new(postgres);
+
   let config = ServerConfig::default();
-  let protocol = Protocol::new();
   let server = RtmpServer::new(config, protocol);
 
   println!("RTMP service started @ 0.0.0.0:1935");

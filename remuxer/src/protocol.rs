@@ -12,22 +12,24 @@ use rtmp_rs::protocol::message::PublishParams;
 
 use uuid::Uuid;
 
-use crate::postgres::query;
+use crate::postgres::Postgres;
 use crate::stream::Stream;
 use crate::stream::StreamRegistry;
 
 pub struct Protocol {
-  registry: Arc<Mutex<StreamRegistry>>
+  registry: Arc<Mutex<StreamRegistry>>,
+  db: Postgres
 }
 
 impl Protocol {
-  pub fn new() -> Self {
+  pub fn new(db: Postgres) -> Self {
     let registry = StreamRegistry::new();
     let mutex = Mutex::new(registry);
     let arc = Arc::new(mutex);
 
-    return Protocol {
-      registry: arc
+    return Self {
+      registry: arc,
+      db: db
     };
   }
 
@@ -64,7 +66,7 @@ impl Protocol {
       }
     };
 
-    match query("insert into sessions (uid, app, event) values ($1, $2, 'STOP') returning uid", &[ &session_uuid, &app_uuid ]).await {
+    match self.db.query("insert into sessions (uid, app, event) values ($1, $2, 'STOP') returning uid", &[ &session_uuid, &app_uuid ]).await {
       Ok(_) => {},
       Err(error) => {
         eprintln!("Unable stopping session - {}", error);
@@ -92,7 +94,7 @@ impl RtmpHandler for Protocol {
       }
     };
 
-    match query("select owner from streams where app = $1", &[ &app ]).await {
+    match self.db.query("select owner from streams where app = $1", &[ &app ]).await {
       Ok(rows) => {
         if rows.len() != 1 {
           eprintln!("Invalid app name {}", params.app);
@@ -131,7 +133,7 @@ impl RtmpHandler for Protocol {
       }
     };
 
-    match query("select owner from streams where app = $1 and key = $2", &[ &app, &key ]).await {
+    match self.db.query("select owner from streams where app = $1 and key = $2", &[ &app, &key ]).await {
       Ok(rows) => {
         if rows.len() != 1 {
           eprintln!("Invalid key received for app name {}", context.app);
@@ -148,7 +150,7 @@ impl RtmpHandler for Protocol {
       }
     };
 
-    let session: Uuid = match query("insert into sessions (app, event) values ($1, 'START') returning uid", &[ &app ]).await {
+    let session: Uuid = match self.db.query("insert into sessions (app, event) values ($1, 'START') returning uid", &[ &app ]).await {
       Ok(rows) => {
         rows[0].get("uid")
       },

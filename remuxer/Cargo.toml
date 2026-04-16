@@ -6,6 +6,7 @@ edition = '2024'
 [dependencies]
 tokio = { version = "1.48.0", features = [ "full" ] }
 rtmp-rs = "0.5.0"
+deadpool-postgres = "0.14.1"
 tokio-postgres = { version = "0.7.17", features = ["with-uuid-1"] }
 uuid = "1.11"
 gstreamer = "0.25.1"

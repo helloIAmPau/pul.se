@@ -1,12 +1,38 @@
+use std::fmt;
+
 use aws_sdk_s3::config::Credentials;
 use aws_config::BehaviorVersion;
 use aws_sdk_s3::Client;
 use aws_sdk_s3::config::Builder;
-use aws_sdk_s3::Error;
 use aws_sdk_s3::types::CreateBucketConfiguration;
 use aws_sdk_s3::config::Region;
 
 use std::env::var;
+
+#[derive(Debug)]
+pub enum StorageErrorKind {
+  Bucket
+}
+
+pub struct StorageError {
+  kind: StorageErrorKind,
+  message: String
+}
+
+impl StorageError {
+  pub fn new(kind: StorageErrorKind, message: &str) -> Self {
+    return Self {
+      kind: kind,
+      message: message.to_string()
+    }
+  }
+}
+
+impl fmt::Display for StorageError {
+  fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    return write!(formatter, "{:?}: {}", self.kind, self.message);
+  }
+}
 
 pub struct Storage {
   client: Client
@@ -37,7 +63,7 @@ impl Storage {
     };
   }
 
-  pub async fn create(&self, name: &str) -> Result<(), Error> {
+  pub async fn create(&self, name: &str) -> Result<(), StorageError> {
     match self.client.head_bucket().bucket(name).send().await {
       Ok(_) => {
         return Ok(());
@@ -45,7 +71,7 @@ impl Storage {
       Err(error) => {
         let service_error = error.into_service_error();
         if service_error.is_not_found() == false {
-          return Err(service_error.into());
+          return Err(StorageError::new(StorageErrorKind::Bucket, &service_error.to_string()));
         }
       }
     };
@@ -57,7 +83,7 @@ impl Storage {
         return Ok(())
       },
       Err(error) => {
-        return Err(error.into());
+        return Err(StorageError::new(StorageErrorKind::Bucket, &error.to_string()));
       }
     };
   }

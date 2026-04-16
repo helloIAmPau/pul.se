@@ -1,11 +1,10 @@
 use std::collections::HashMap;
+use std::fmt;
 
 use gstreamer::State::Paused;
 use gstreamer::State::Playing;
 use gstreamer::parse::launch;
 use gstreamer::glib::Error;
-use gstreamer::glib::KeyFileError;
-use gstreamer::glib::ConvertError;
 use gstreamer::Format;
 use gstreamer::Pipeline;
 use gstreamer::ClockTime;
@@ -19,6 +18,33 @@ use gstreamer::prelude::GstBinExt;
 use gstreamer_app::AppSrc;
 
 use crate::storage::Storage;
+
+#[derive(Debug)]
+pub enum StreamErrorKind {
+  StreamRegistry,
+  Pipeline,
+  Source
+}
+
+pub struct StreamError {
+  kind: StreamErrorKind,
+  message: String
+}
+
+impl StreamError {
+  pub fn new(kind: StreamErrorKind, message: &str) -> Self {
+    return Self {
+      kind: kind,
+      message: message.to_string()
+    }
+  }
+}
+
+impl fmt::Display for StreamError {
+  fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    return write!(formatter, "{:?}: {}", self.kind, self.message);
+  }
+}
 
 pub struct StreamRegistry {
   streams: HashMap<String, Stream>
@@ -41,13 +67,13 @@ impl StreamRegistry {
     self.streams.remove(app);
   }
 
-  pub fn get(&self, app: &str) -> Result<&Stream, Error> {
+  pub fn get(&self, app: &str) -> Result<&Stream, StreamError> {
     match self.streams.get(app) {
       Some(stream) => {
         return Ok(stream);
       },
       None => {
-        return Err(Error::new(KeyFileError::KeyNotFound, "No stream found"));
+        return Err(StreamError::new(StreamErrorKind::StreamRegistry, "No stream found"));
       }
     };
   }
@@ -65,32 +91,32 @@ impl Stream {
     return init();
   }
 
-  pub fn new(session: &str) -> Result<Self, Error> {
+  pub fn new(session: &str) -> Result<Self, StreamError> {
     let pipeline_definition = format!("appsrc name=video_src format=time is-live=true ! h264parse ! sink.video appsrc name=audio_src format=time is-live=true ! aacparse ! sink.audio awss3hlssink name=sink bucket=\"streams\" key-prefix=\"{0}\" access-key=\"{1}\" secret-access-key=\"{2}\" force-path-style=true region=\"us-east-1\" endpoint-uri=\"http://storage:9000\"", session, Storage::get_key(), Storage::get_secret());
     let pipeline_element = match launch(&pipeline_definition) {
       Ok(element) => element,
       Err(error) => {
-        return Err(error);
+        return Err(StreamError::new(StreamErrorKind::Pipeline, &error.to_string()));
       }
     };
 
     let pipeline = match pipeline_element.downcast::<Pipeline>() {
       Ok(pipeline) => pipeline,
       Err(_) => {
-        return Err(Error::new(ConvertError::Failed, "Unable to downcast pipeline_element element to Pipeline"));
+        return Err(StreamError::new(StreamErrorKind::Pipeline, "Unable to downcast pipeline_element element to Pipeline"));
       }
     };
 
     let video_src_element = match pipeline.by_name("video_src") {
       Some(element) => element,
       None => {
-        return Err(Error::new(KeyFileError::KeyNotFound, "No video source found"));
+        return Err(StreamError::new(StreamErrorKind::Source, "No video source found"));
       }
     };
     let video = match video_src_element.downcast::<AppSrc>() {
       Ok(video) => video,
       Err(_) => {
-        return Err(Error::new(ConvertError::Failed, "Unable to downcast video_src element to appsrc"));
+        return Err(StreamError::new(StreamErrorKind::Source, "Unable to downcast video_src element to appsrc"));
       }
     };
     video.set_format(Format::Time);
@@ -98,13 +124,13 @@ impl Stream {
     let audio_src_element = match pipeline.by_name("audio_src") {
       Some(element) => element,
       None => {
-        return Err(Error::new(KeyFileError::KeyNotFound, "No audio source found"));
+        return Err(StreamError::new(StreamErrorKind::Source, "No audio source found"));
       }
     };
     let audio = match audio_src_element.downcast::<AppSrc>() {
       Ok(audio) => audio,
       Err(_) => {
-        return Err(Error::new(ConvertError::Failed, "Unable to downcast audio_src element to appsrc"));
+        return Err(StreamError::new(StreamErrorKind::Source, "Unable to downcast audio_src element to appsrc"));
       }
     };
     audio.set_format(Format::Time);
