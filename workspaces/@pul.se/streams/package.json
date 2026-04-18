@@ -1,16 +1,14 @@
 {
-  "name": "@pul.se/graphql",
+  "name": "@pul.se/streams",
   "version": "0.0.0",
   "scripts": {
     "build": "esbuild index.js --bundle --outdir=dist --platform=node --target=node24.11 --sourcemap --loader:.graphql=text",
     "develop": "npm run build && concurrently 'npm run build -- --watch' 'node --watch dist/index.js'"
   },
   "devDependencies": {
-    "@graphql-tools/schema": "10.0.30",
+    "@aws-sdk/client-s3": "3.1032.0",
     "concurrently": "9.2.1",
     "esbuild": "0.28.0",
-    "express": "5.2.1",
-    "graphql-http": "1.22.4",
-    "react": "19.2.5"
+    "express": "5.2.1"
   }
 }

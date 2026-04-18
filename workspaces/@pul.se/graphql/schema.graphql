@@ -1,3 +1,16 @@
+scalar UUID
+scalar StreamState
+scalar Timestamp
+scalar URL
+
+type Stream {
+  app: UUID!,
+  name: String!,
+  url: URL!,
+  state: StreamState!,
+  timestamp: Timestamp!
+}
+
 type Query {
-  hello: String
+  stream(app: UUID!): Stream
 }
