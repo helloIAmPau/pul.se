@@ -1,8 +1,9 @@
 .wrapper {
   width: 100%;
-  height: calc(2 * var(--base-unit));
+  height: calc(3 * var(--base-unit));
   display: flex;
   align-items: center;
+  background-color: var(--color-surface);
 }
 
 .container {

@@ -7,6 +7,11 @@ services:
       target: 'builder'
     volumes:
       - './workspaces:/source/workspaces'
+  streams:
+    build:
+      target: 'builder'
+    volumes:
+      - './workspaces:/source/workspaces'
   graphql:
     build:
       target: 'builder'

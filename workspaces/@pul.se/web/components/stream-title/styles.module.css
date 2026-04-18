@@ -1,0 +1,6 @@
+.wrapper {
+  font-family: var(--font-title);
+  font-size: calc(1.75 * var(--base-unit));
+  line-height: calc(1.75 * var(--base-unit));
+  font-weight: var(--weight-title);
+}

@@ -1,0 +1,7 @@
+{
+  "name": "@pul.se/postgres",
+  "version": "0.0.0",
+  "devDependencies": {
+    "pg": "8.16.3"
+  }
+}

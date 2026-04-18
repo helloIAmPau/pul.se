@@ -1,7 +1,7 @@
+import { stream } from './streams';
+
 export default {
   Query: {
-    hello: function() {
-      return 'world'
-    }
+    stream
   }
 };
