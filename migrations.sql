@@ -1,5 +1,13 @@
 begin;
 
+create table if not exists users (
+  uid uuid not null default gen_random_uuid(),
+  email text not null
+);
+
+drop index if exists users_unique_email;
+create unique index users_unique_email on users (email);
+
 create table if not exists streams (
   key uuid not null default gen_random_uuid(),
   app uuid not null default gen_random_uuid(),

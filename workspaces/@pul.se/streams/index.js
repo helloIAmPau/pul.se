@@ -31,7 +31,6 @@ app.get('/streams/:session/:file', function(request, response) {
 
     object.Body.pipe(response);
   });
-
 });
 
 app.use(function(error, request, response, next) {
