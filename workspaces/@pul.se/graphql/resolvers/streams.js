@@ -2,7 +2,7 @@ import { query } from '@pul.se/postgres';
 
 const CDN_URL = process.env.PULSE_CDN;
 
-export const stream = function(_, { app }, { user }) {
+export const stream = function(_, { app }) {
   return query(`
 with events as (
   select

@@ -1,0 +1,23 @@
+.wrapper {
+  all: unset;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--base-unit);
+  border: 1px solid var(--color-border);
+  padding-top: calc(0.5 * var(--base-unit));
+  padding-bottom: calc(0.5 * var(--base-unit));
+  border-radius: var(--border-radius);
+  font-weight: var(--weight-title);
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    border: 1px solid var(--color-text);
+  }
+}
+
+.brand {
+  height: calc(2 * var(--base-unit));
+}

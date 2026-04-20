@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "build:server": "esbuild index.js --bundle --outdir=dist --platform=node --target=node24.11 --sourcemap --loader:.js=jsx --jsx=automatic --loader:.css=text",
-    "build:client": "esbuild client.js --bundle --outdir=dist/assets --sourcemap --loader:.js=jsx --jsx=automatic --loader:.woff2=file --loader:.svg=file",
+    "build:client": "esbuild client.js --bundle --outdir=dist/assets --sourcemap --loader:.js=jsx --jsx=automatic --loader:.woff2=file --loader:.svg=file --public-path=/assets",
     "build": "npm run build:server -- --minify && npm run build:client -- --minify",
     "develop:server": "npm run build && concurrently 'npm run build:server -- --watch' 'node --watch dist/index.js'",
     "develop:client": "npm run build:client -- --watch",

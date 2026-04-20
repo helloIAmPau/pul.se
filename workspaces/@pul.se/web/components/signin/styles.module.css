@@ -1,0 +1,23 @@
+.wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(0.5 * var(--base-unit));
+  padding-top: 100px;
+}
+
+.header {
+  font-size: calc(1.75 * var(--base-unit));
+  font-family: var(--font-title);
+  font-weight: var(--weight-title);
+}
+
+.providers {
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.75 * var(--base-unit));
+  margin-top: 25px;
+}
