@@ -1,6 +1,8 @@
 .wrapper {
   width: 100%;
   height: calc(3 * var(--base-unit));
+  min-height: calc(3 * var(--base-unit));
+  max-height: calc(3 * var(--base-unit));
   display: flex;
   align-items: center;
   background-color: var(--color-surface);
@@ -10,4 +12,10 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.link {
+  all: unset;
+  cursor: pointer;
+  user-select: none;
 }

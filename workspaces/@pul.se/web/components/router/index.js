@@ -8,6 +8,7 @@ import Theater from '../theater';
 import SplashScreen from '../splash-screen';
 import Signin from '../signin';
 import Dashboard from '../dashboard';
+import LandingPage from '../landing-page';
 
 export default function Router() {
   const { state } = useAuth();
@@ -15,19 +16,20 @@ export default function Router() {
   const privilegedRoutes = useMemo(function() {
     if(state === 'LOADING') {
       return (
-        <Route path='/dashboard/*' element={ <SplashScreen /> } />
+        <Route path='/*' element={ <SplashScreen /> } />
       );
     }
 
     if(state === 'SIGNED_OUT') {
       return (
-        <Route path='/dashboard/*' element={ <Signin /> } />
+        <Route path='/*' element={ <Signin /> } />
       );
     }
 
     return (
-      <Route path='/dashboard' element={ <Layout /> }>
-        <Route index element={ <Dashboard /> } />
+      <Route element={ <Layout /> }>
+        <Route path='/dashboard' element={ <Dashboard /> } />
+        <Route element={ <Theater /> } path='/theater/:app' />
       </Route>
     );
   }, [ state ]);
@@ -35,10 +37,8 @@ export default function Router() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route index element={ <LandingPage /> } />
         { privilegedRoutes }
-        <Route element={ <Layout /> }>
-          <Route element={ <Theater /> } path='/theater/:app' />
-        </Route>
       </Routes>
     </BrowserRouter>
   );

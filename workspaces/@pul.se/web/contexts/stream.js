@@ -9,7 +9,7 @@ export const useStream = function() {
 };
 
 export const StreamProvider = function({ children }) {
-  const [ stream, setStream ] = useState({});
+  const [ stream, setStream ] = useState({ state: 'LOADING' });
 
   const { app } = useParams();
 

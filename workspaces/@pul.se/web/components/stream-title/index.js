@@ -1,13 +1,11 @@
 import { useStream } from '../../contexts/stream';
 
-import { wrapper } from './styles.module.css';
+import Heading from '../heading';
 
 export default function StreamTitle() {
   const { name } = useStream();
 
   return (
-    <div className={ wrapper }>
-      <h1>{ name }</h1>
-    </div>
+    <Heading>{ name }</Heading>
   );
 };

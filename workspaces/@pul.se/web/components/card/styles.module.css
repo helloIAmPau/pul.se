@@ -1,0 +1,6 @@
+.wrapper {
+  background-color: var(--color-surface);
+  width: 100%;
+  padding: var(--base-unit);
+  border-radius: var(--border-radius);
+}

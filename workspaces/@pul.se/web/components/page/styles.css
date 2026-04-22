@@ -3,8 +3,8 @@
 
   --color-accent: #FF4D00;
 
-  --color-light-background: #FFFFFF;
-  --color-light-surface: #F6F8FA;
+  --color-light-surface: #FFFFFF;
+  --color-light-background: #F6F8FA;
   --color-light-border: #D0D7DE;
   --color-light-text: #0D1117;
   --color-light-text-secondary: #57606A;
@@ -23,12 +23,4 @@
   --weight-regular: 400;
   --weight-label: 500;
   --weight-title: 600;
-}
-
-#root {
-  height: 100svh;
-  width: 100%;
-
-  font-family: var(--font);
-  font-weight: var(--weight-regular);
 }

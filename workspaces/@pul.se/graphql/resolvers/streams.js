@@ -2,36 +2,58 @@ import { query } from '@pul.se/postgres';
 
 const CDN_URL = process.env.PULSE_CDN;
 
-export const stream = function(_, { app }) {
-  return query(`
-with events as (
-  select
-    uid,
-    sessions.app as app,
-    name,
-    event as state,
-    timestamp
-  from sessions
-  left join streams
-  on sessions.app = streams.app
-  order by timestamp desc
-)
+const _formatUrl = function(uid) {
+  return `${ CDN_URL }/${ uid }/playlist.m3u8`;
+};
 
+export const stream = function(_, { app }, { user }) {
+  return query(`
 select
   *
 from
-  events
+  stream_sessions
 where
-  app = $1
+  app = $1 and owner = $2
 limit 1
-  `, [ app ]).then(function(rows) {
+  `, [ app, user.uid ]).then(function(rows) {
     const stream = rows[0];
     if(stream == null) {
       return;
     }
 
-    stream.url = `${ CDN_URL }/${ stream.uid }/playlist.m3u8`;
+    stream.url = _formatUrl(stream.uid);
 
     return stream;
+  });
+};
+
+export const live = function(_, __, { user }) {
+  return query(`
+with live as (
+  select
+    distinct on (owner, app)
+    owner,
+    app,
+    uid,
+    name,
+    state,
+    timestamp
+  from
+    stream_sessions
+  order by owner, app, timestamp desc
+)
+
+select
+  *
+from
+  live
+where
+  owner = $1 and state = 'PLAY'
+  `, [ user.uid ]).then(function(rows) {
+    return rows.map(function(stream) {
+      stream.url = _formatUrl(stream.uid);
+
+      return stream;
+    });
   });
 };
