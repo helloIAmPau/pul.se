@@ -150,7 +150,7 @@ impl RtmpHandler for Protocol {
       }
     };
 
-    let session: Uuid = match self.db.query("insert into sessions (app, event) values ($1, 'START') returning uid", &[ &app ]).await {
+    let session: Uuid = match self.db.query("insert into sessions (app, event) values ($1, 'PLAY') returning uid", &[ &app ]).await {
       Ok(rows) => {
         rows[0].get("uid")
       },

@@ -1,7 +1,8 @@
-import { stream } from './streams';
+import { stream, live } from './streams';
 
 export default {
   Query: {
-    stream
+    stream,
+    live
   }
 };

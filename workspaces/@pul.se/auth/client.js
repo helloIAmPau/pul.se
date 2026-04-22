@@ -1,5 +1,4 @@
 import { useMemo, useCallback } from 'react';
-
 import client from '@pul.se/client';
 
 export const useAuth = function() {

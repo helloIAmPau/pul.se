@@ -1,0 +1,27 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.75 * var(--base-unit));
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  gap: calc(0.5 * var(--base-unit));
+}
+
+.dot {
+  width: calc(0.75 * var(--base-unit));
+  height: calc(0.75 * var(--base-unit));
+  background-color: var(--color-accent);
+  border-radius: 50%;
+  animation-name: pulse;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0; }
+  100% { opacity: 1; }
+}

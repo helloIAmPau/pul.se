@@ -2,7 +2,7 @@
   "name": "pul.se/repo",
   "version": "0.0.0",
   "scripts": {
-    "migrate": "docker compose exec -T postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} < migrations.sql",
+    "migrate": "docker exec -i pulse-postgres-1 psql -U ${POSTGRES_USER} -d ${POSTGRES_DB} < migrations.sql",
     "db": "docker exec -t -i pulse-postgres-1 psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}",
     "develop": "source ./.env.develop && docker compose -f docker-compose.yml -f docker-compose.develop.yml up --build"
   },

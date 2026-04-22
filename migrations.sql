@@ -22,4 +22,18 @@ create table if not exists sessions (
   timestamp timestamp not null default now()
 );
 
+create or replace view stream_sessions as (
+  select
+    uid,
+    sessions.app as app,
+    name,
+    event as state,
+    timestamp,
+    owner
+  from sessions
+  left join streams
+  on sessions.app = streams.app
+  order by timestamp desc
+);
+
 commit;
