@@ -68,8 +68,6 @@ services:
     restart: 'always'
     ports:
       - '1935:1935'
-    volumes:
-      - './data/remxer/streams:/streams'
     build:
       context: './remuxer'
     environment:
