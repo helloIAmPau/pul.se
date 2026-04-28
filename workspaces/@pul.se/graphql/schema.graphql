@@ -3,7 +3,7 @@ scalar StreamState
 scalar Timestamp
 scalar URL
 
-type Stream {
+type StreamSession {
   app: UUID!,
   name: String!,
   url: URL!,
@@ -11,7 +11,14 @@ type Stream {
   timestamp: Timestamp!
 }
 
+type Stream {
+  name: String!
+  app: UUID!
+  key: UUID!
+}
+
 type Query {
-  stream(app: UUID!): Stream
-  live: [ Stream ]!
+  streamSession(app: UUID!): StreamSession
+  live: [ StreamSession ]!
+  streams: [ Stream ]!
 }
