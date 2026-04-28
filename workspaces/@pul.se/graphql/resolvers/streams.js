@@ -6,7 +6,7 @@ const _formatUrl = function(uid) {
   return `${ CDN_URL }/${ uid }/playlist.m3u8`;
 };
 
-export const stream = function(_, { app }, { user }) {
+export const streamSession = function(_, { app }, { user }) {
   return query(`
 select
   *
@@ -56,4 +56,15 @@ where
       return stream;
     });
   });
+};
+
+export const streams = function(_, __, { user }) {
+  return query(`
+select
+  *
+from
+  streams
+where
+  owner = $1
+  `, [ user.uid ]);
 };
