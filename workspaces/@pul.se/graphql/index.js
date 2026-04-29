@@ -27,6 +27,14 @@ app.post('/graphql', createHandler({
   }
 }));
 
+app.use(function(error, request, response, next) {
+  response.json({
+    errors: [{
+      message: error.message
+    }]
+  });
+});
+
 app.listen(80, '0.0.0.0', function() {
   console.log(`${ process.env.SERVICE } started @ http://0.0.0.0`);
 });
