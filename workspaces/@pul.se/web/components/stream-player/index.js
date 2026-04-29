@@ -5,6 +5,8 @@ import Video from '../video';
 export default function StreamPlayer() {
   const { url, state } = useStream();
 
+  console.log(state);
+
   if(state !== 'PLAY') {
     return (
       <h1>Your video will start soon</h1>

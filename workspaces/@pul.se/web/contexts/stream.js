@@ -15,7 +15,7 @@ export const StreamProvider = function({ children }) {
 
   const streamQuery = useGraphql(`
 query($app: UUID!) {
-  stream(app: $app) {
+  streamSession(app: $app) {
     app,
     name,
     url,
@@ -26,8 +26,8 @@ query($app: UUID!) {
   `);
 
   useLayoutEffect(function() {
-    streamQuery({ app }).then(function({ stream }) {
-      setStream(stream);
+    streamQuery({ app }).then(function({ streamSession }) {
+      setStream(streamSession);
     });
   }, [ streamQuery, app ]);
 
