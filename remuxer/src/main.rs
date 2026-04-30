@@ -40,7 +40,14 @@ async fn main() {
       return;
     }
   };
-  let protocol = Protocol::new(postgres);
+  let protocol = match Protocol::new(postgres).await {
+    Ok(protocol) => protocol,
+    Err(error) => {
+      eprintln!("Unable to instantiate protocol - {}", error);
+
+      return;
+    }
+  };
 
   let config = ServerConfig::default();
   let server = RtmpServer::new(config, protocol);

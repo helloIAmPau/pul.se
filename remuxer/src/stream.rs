@@ -92,7 +92,8 @@ impl Stream {
   }
 
   pub fn new(session: &str) -> Result<Self, StreamError> {
-    let pipeline_definition = format!("appsrc name=video_src format=time is-live=true ! h264parse ! sink.video appsrc name=audio_src format=time is-live=true ! aacparse ! sink.audio awss3hlssink name=sink bucket=\"streams\" key-prefix=\"{0}\" access-key=\"{1}\" secret-access-key=\"{2}\" force-path-style=true region=\"us-east-1\" endpoint-uri=\"http://storage:9000\"", session, Storage::get_key(), Storage::get_secret());
+    // use nvh264dec and nvh264enc gop-size=60 to use hardware accelerated encoder and decoder
+    let pipeline_definition = format!("appsrc name=video_src format=time is-live=true ! h264parse ! nvh264dec ! videoconvert ! nvh264enc gop-size=60 ! h264parse ! sink.video appsrc name=audio_src format=time is-live=true ! aacparse ! sink.audio awss3hlssink name=sink bucket=\"streams\" key-prefix=\"{0}\" access-key=\"{1}\" secret-access-key=\"{2}\" force-path-style=true region=\"us-east-1\" endpoint-uri=\"http://storage:9000\" hlssink::target-duration=1", session, Storage::get_key(), Storage::get_secret());
     let pipeline_element = match launch(&pipeline_definition) {
       Ok(element) => element,
       Err(error) => {
