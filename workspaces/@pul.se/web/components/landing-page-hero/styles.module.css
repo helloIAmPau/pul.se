@@ -1,0 +1,36 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-unit);
+  padding-top: 50px;
+}
+
+.tag_line {
+  font-size: var(--base-unit);
+  font-variant-caps: small-caps;
+  color: var(--color-accent);
+  font-family: var(--font-title);
+  font-weight: var(--weight-title);
+}
+
+.heading {
+  font-size: calc(2.5 * var(--base-unit));
+  line-height: calc(2.5 * var(--base-unit));
+}
+
+.description {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.25 * var(--base-unit));
+
+  font-size: calc(0.90 * var(--base-unit));
+  color: var(--color-text-secondary);
+
+  padding-bottom: var(--base-unit);
+}
+
+.button_line {
+  display: flex;
+  align-items: center;
+  gap: var(--base-unit);
+}

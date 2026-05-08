@@ -12,6 +12,7 @@
 }
 
 .input {
+  color: var(--color-text);
   flex: 1;
   background-color: var(--color-surface);
   padding: calc(0.5 * var(--base-unit));

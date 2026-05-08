@@ -39,7 +39,9 @@ export default function Router() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route index element={ <LandingPage /> } />
+        <Route element={ <Layout /> }>
+          <Route index element={ <LandingPage /> } />
+        </Route>
         { privilegedRoutes }
       </Routes>
     </BrowserRouter>

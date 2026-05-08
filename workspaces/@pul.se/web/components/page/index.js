@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import reset from './reset.css';
 import styles from './styles.css';
 
-export default function Page() {
+export default function Page({ children }) {
   const css = useMemo(function() {
     return [ reset, styles ].map(function(css) {
       return css.replace(/\n/g, '').replace(/\,\s*/g, ',').replace(/\s*{\s*/g, '{').replace(/\:\s*/g, ':').replace(/\;\s*/g, ';');
@@ -31,7 +31,9 @@ export default function Page() {
         <link href='/assets/client.css' rel='stylesheet' />
       </head>
       <body>
-        <div id='root'></div>
+        <div id='root' className='light_theme'>
+          { children }
+        </div>
       </body>
     </html>
   );
