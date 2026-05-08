@@ -3,4 +3,5 @@
   width: 100%;
   padding: var(--base-unit);
   border-radius: var(--border-radius);
+  border: 1px solid var(--color-border);
 }

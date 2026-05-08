@@ -12,7 +12,7 @@ services:
       target: 'builder'
     volumes:
       - './workspaces:/source/workspaces'
-  streams:
+  buckets:
     build:
       target: 'builder'
     volumes:

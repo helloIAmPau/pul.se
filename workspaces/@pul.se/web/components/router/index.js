@@ -8,6 +8,7 @@ import Theater from '../theater';
 import SplashScreen from '../splash-screen';
 import Signin from '../signin';
 import Dashboard from '../dashboard';
+import StreamSettings from '../stream-settings';
 import LandingPage from '../landing-page';
 
 export default function Router() {
@@ -30,6 +31,7 @@ export default function Router() {
       <Route element={ <Layout /> }>
         <Route path='/dashboard' element={ <Dashboard /> } />
         <Route element={ <Theater /> } path='/theater/:app' />
+        <Route element={ <StreamSettings /> } path='/streams/:app' />
       </Route>
     );
   }, [ state ]);

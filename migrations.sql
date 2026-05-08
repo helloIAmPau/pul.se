@@ -12,7 +12,8 @@ create table if not exists streams (
   key uuid not null default gen_random_uuid(),
   app uuid not null default gen_random_uuid(),
   name text not null,
-  owner uuid not null
+  owner uuid not null,
+  deleted boolean not null default false
 );
 
 create table if not exists sessions (

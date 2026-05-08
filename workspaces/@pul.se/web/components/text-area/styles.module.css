@@ -1,0 +1,12 @@
+.area {
+  min-height: calc(5 * var(--base-unit));
+  border-radius: var(--border-radius);
+  padding: calc(0.5 * var(--base-unit));
+  border: 1px solid var(--color-border);
+  max-width: 100%;
+
+  &:focus-visible {
+    border: 1px solid var(--color-accent);
+    outline: none;
+  }
+}

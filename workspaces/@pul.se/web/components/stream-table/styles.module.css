@@ -5,22 +5,6 @@
   justify-content: flex-start;
   gap: calc(0.25 * var(--base-unit));
 
-  & > span {
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    & > svg {
-      width: var(--base-unit);
-      height: var(--base-unit);
-      min-width: var(--base-unit);
-      min-height: var(--base-unit);
-      max-width: var(--base-unit);
-      max-height: var(--base-unit);
-    }
-  }
-
   & > div {
     width: calc(100% - 1.25 * var(--base-unit));
     min-width: calc(100% - 1.25 * var(--base-unit));

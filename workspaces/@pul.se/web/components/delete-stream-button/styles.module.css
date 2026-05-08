@@ -1,0 +1,11 @@
+.button {
+  background-color: var(--color-danger);
+  color: var(--color-background);
+  border: solid 1px var(--color-danger);
+  font-size: calc(1.25 * var(--base-unit));
+
+  & > svg {
+    width: calc(1.25 * var(--base-unit));
+    height: calc(1.25 * var(--base-unit));
+  }
+}

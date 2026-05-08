@@ -1,3 +1,5 @@
+use std::fmt;
+
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
@@ -16,21 +18,56 @@ use crate::postgres::Postgres;
 use crate::stream::Stream;
 use crate::stream::StreamRegistry;
 
+#[derive(Debug)]
+pub enum ProtocolErrorKind {
+  Initialization
+}
+
+pub struct ProtocolError {
+  kind: ProtocolErrorKind,
+  message: String
+}
+
+impl ProtocolError {
+  pub fn new(kind: ProtocolErrorKind, message: &str) -> Self {
+    return Self {
+      kind: kind,
+      message: message.to_string()
+    }
+  }
+}
+
+impl fmt::Display for ProtocolError {
+  fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    return write!(formatter, "{:?}: {}", self.kind, self.message);
+  }
+}
+
 pub struct Protocol {
   registry: Arc<Mutex<StreamRegistry>>,
   db: Postgres
 }
 
 impl Protocol {
-  pub fn new(db: Postgres) -> Self {
+  pub async fn new(db: Postgres) -> Result<Self, ProtocolError> {
     let registry = StreamRegistry::new();
     let mutex = Mutex::new(registry);
     let arc = Arc::new(mutex);
 
-    return Self {
+    // Fixing pending streaming after reboot
+    match db.query("insert into sessions (uid, app, event) select uid, app, 'STOP' as event from (select uid, app, count(event) as event_number from sessions group by uid, app) where event_number = 1", &[]).await {
+      Ok(_) => {},
+      Err(error) => {
+        return Err(ProtocolError::new(ProtocolErrorKind::Initialization, &error.to_string()));
+      }
+    }
+
+    let protocol = Self {
       registry: arc,
       db: db
     };
+
+    return Ok(protocol);
   }
 
   async fn clean_up(&self, app: &str) {
@@ -94,7 +131,7 @@ impl RtmpHandler for Protocol {
       }
     };
 
-    match self.db.query("select owner from streams where app = $1", &[ &app ]).await {
+    match self.db.query("select owner from streams where app = $1 and deleted = false", &[ &app ]).await {
       Ok(rows) => {
         if rows.len() != 1 {
           eprintln!("Invalid app name {}", params.app);
@@ -133,7 +170,7 @@ impl RtmpHandler for Protocol {
       }
     };
 
-    match self.db.query("select owner from streams where app = $1 and key = $2", &[ &app, &key ]).await {
+    match self.db.query("select owner from streams where app = $1 and key = $2 and deleted = false", &[ &app, &key ]).await {
       Ok(rows) => {
         if rows.len() != 1 {
           eprintln!("Invalid key received for app name {}", context.app);
