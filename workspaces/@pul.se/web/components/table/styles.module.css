@@ -60,9 +60,37 @@
   }
 }
 
+.thr {
+  border-bottom: none;
+}
+
+
 .tbody {
   & > tr:last-child {
     border-bottom: none;
   }
 }
 
+.controls_heading {
+  width: calc(3 * var(--base-unit));
+}
+
+.controls_data {
+  text-align: center;
+}
+
+.action {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  & > svg {
+    width: var(--base-unit);
+    height: var(--base-unit);
+    min-width: var(--base-unit);
+    min-height: var(--base-unit);
+    max-width: var(--base-unit);
+    max-height: var(--base-unit);
+  }
+}

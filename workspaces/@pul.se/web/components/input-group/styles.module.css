@@ -1,0 +1,11 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: calc(0.25 * var(--base-unit));
+}
+
+.heading {
+  font-family: var(--font-title);
+  font-weight: var(--weight-title);
+  color: var(--color-text-secondary);
+}

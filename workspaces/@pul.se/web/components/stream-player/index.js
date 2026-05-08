@@ -1,11 +1,9 @@
-import { useStream } from '../../contexts/stream';
+import { useStreamSession } from '../../contexts/stream-session';
 
 import Video from '../video';
 
 export default function StreamPlayer() {
-  const { url, state } = useStream();
-
-  console.log(state);
+  const { url, state } = useStreamSession();
 
   if(state !== 'PLAY') {
     return (

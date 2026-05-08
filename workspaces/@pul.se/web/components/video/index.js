@@ -1,8 +1,6 @@
 import { useRef, useLayoutEffect } from 'react';
 import { Hls } from 'hls.js';
 
-import { useStream } from '../../contexts/stream';
-
 import { wrapper, player } from './styles.module.css';
 
 export default function Video({ url, controls, muted }) {

@@ -1,5 +1,5 @@
 {
-  "name": "@pul.se/streams",
+  "name": "@pul.se/buckets",
   "version": "0.0.0",
   "scripts": {
     "build": "esbuild index.js --bundle --outdir=dist --platform=node --target=node24.11 --sourcemap --loader:.graphql=text",

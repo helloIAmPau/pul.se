@@ -1,12 +1,18 @@
 import { useMemo, useCallback } from 'react';
-import { CopySimpleIcon } from '@phosphor-icons/react';
+import { useNavigate } from 'react-router';
+import { CopySimpleIcon, WrenchIcon } from '@phosphor-icons/react';
 import { useGraphql } from '@pul.se/graphql/client';
 
-import Table from '../table';
+import useClipboard from '../../hooks/use-clipboard';
+
+import { Table, useControls } from '../table';
 
 import { cell } from './styles.module.css';
 
 export default function StreamTable() {
+  const navigate = useNavigate();
+  const { copy } = useClipboard(); 
+
   const streamsQuery = useGraphql(`
 query {
   streams {
@@ -17,54 +23,63 @@ query {
 }
   `);
 
+  const onColumn = useCallback(function({ app }, { action }) {
+    const onClick = function() {
+      navigate(`/streams/${ app }`);
+    };
+
+    return (
+      <span onClick={ onClick } className={ action } title='Open settings'>
+        <WrenchIcon />
+      </span>
+    );
+  }, [ navigate ]);
+  const controls = useControls(onColumn);
+
   const columns = useMemo(function() {
     return [{
       label: 'name',
-      onColumn: function(row) {
-        return row.name;
+      onColumn: function({ name }) {
+        return name;
       }
     }, {
       label: 'app',
-      onColumn: function(row) {
+      onColumn: function({ app }, { action }) {
         const onClick = function() {
-          navigator.clipboard.writeText(`rtmp://${ window.location.hostname }/${ row.app }`).then(function() {
-            console.log('URL copied');
-          });
+          copy(`rtmp://${ window.location.hostname }/${ app }`);
         };
         
         return (
           <div className={ cell }>
-            <span onClick={ onClick } title='Copy stream URL'>
+            <span className={ action } onClick={ onClick } title='Copy stream URL'>
               <CopySimpleIcon />
             </span>
             <div>
-              { row.app }
+              { app }
             </div>
           </div>
         );
       }
     }, {
       label: 'key',
-      onColumn: function(row) {
+      onColumn: function({ key }, { action }) {
         const onClick = function() {
-          navigator.clipboard.writeText(row.key).then(function() {
-            console.log('Key copied');
-          });
+          copy(key);
         };
         
         return (
           <div className={ cell }>
-            <span onClick={ onClick } title='Copy key'>
+            <span className={ action } onClick={ onClick } title='Copy key'>
               <CopySimpleIcon />
             </span>
             <div>
-              { row.key }
+              { key }
             </div>
           </div>
         );
       }
-    }];
-  }, []);
+    }, controls ];
+  }, [ copy, controls ]);
 
   const onData = useCallback(function() {
     return streamsQuery().then(function({ streams }) {

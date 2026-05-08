@@ -13,7 +13,7 @@ const client = new S3Client({
 
 const app = Express();
 
-app.get('/streams/:session/:file', function(request, response) {
+app.get('/buckets/streams/:session/:file', function(request, response) {
   const { session, file } = request.params;
 
   const command = new GetObjectCommand({
