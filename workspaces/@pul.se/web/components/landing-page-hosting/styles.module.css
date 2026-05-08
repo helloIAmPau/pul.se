@@ -1,0 +1,28 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: calc(3 * var(--base-unit));
+}
+
+.text {
+  color: var(--color-text-secondary);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--base-unit);
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  & > pre {
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    padding: var(--base-unit);
+    line-height: calc(1.25 * var(--base-unit));
+  }
+}

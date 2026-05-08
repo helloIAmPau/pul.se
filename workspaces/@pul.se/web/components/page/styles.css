@@ -25,3 +25,29 @@
   --weight-label: 500;
   --weight-title: 600;
 }
+
+.light_theme {
+  --color-background: var(--color-light-background);
+  --color-surface: var(--color-light-surface);
+  --color-border: var(--color-light-border);
+  --color-text: var(--color-light-text);
+  --color-text-secondary: var(--color-light-text-secondary);
+}
+
+.dark_theme {
+  --color-background: var(--color-dark-background);
+  --color-surface: var(--color-dark-surface);
+  --color-border: var(--color-dark-border);
+  --color-text: var(--color-dark-text);
+  --color-text-secondary: var(--color-dark-text-secondary);
+}
+
+#root {
+  min-height: 100svh;
+
+  font-family: var(--font);
+  font-weight: var(--weight-regular);
+  color: var(--color-text);
+
+  background-color: var(--color-background);
+}
