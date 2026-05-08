@@ -131,7 +131,7 @@ impl RtmpHandler for Protocol {
       }
     };
 
-    match self.db.query("select owner from streams where app = $1", &[ &app ]).await {
+    match self.db.query("select owner from streams where app = $1 and deleted = false", &[ &app ]).await {
       Ok(rows) => {
         if rows.len() != 1 {
           eprintln!("Invalid app name {}", params.app);
@@ -170,7 +170,7 @@ impl RtmpHandler for Protocol {
       }
     };
 
-    match self.db.query("select owner from streams where app = $1 and key = $2", &[ &app, &key ]).await {
+    match self.db.query("select owner from streams where app = $1 and key = $2 and deleted = false", &[ &app, &key ]).await {
       Ok(rows) => {
         if rows.len() != 1 {
           eprintln!("Invalid key received for app name {}", context.app);
