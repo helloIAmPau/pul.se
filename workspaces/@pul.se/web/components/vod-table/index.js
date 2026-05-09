@@ -9,18 +9,27 @@ export default function VodTable() {
   const { app } = useParams();
 
   const vodsQuery = useGraphql(`
-query($app: UUID!) {
-  vods(app: $app) {
-    name
-    url
-    timestamp
+query($app: UUID!, $pagination: PaginationInput) {
+  vods(app: $app, pagination: $pagination) {
+    data {
+      name
+      url
+      timestamp
+    }
+    count
   }
 }
   `);
 
-  const onData = useCallback(function() {
+  const onData = useCallback(function({ page, limit, search, sorting }) {
     return vodsQuery({
-      app
+      app,
+      pagination: {
+        page,
+        limit,
+        search,
+        sorting
+      }
     }).then(function({ vods }) {
       return vods;
     });
@@ -42,11 +51,13 @@ query($app: UUID!) {
   const columns = useMemo(function() {
     return [{
       label: 'name',
+      sort: 'name',
       onColumn: function({ name }) {
         return name
       }
     }, {
       label: 'date',
+      sort: 'timestamp',
       onColumn: function({ timestamp }) {
         return timestamp;
       }

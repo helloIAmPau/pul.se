@@ -2,6 +2,7 @@ scalar UUID
 scalar StreamState
 scalar Timestamp
 scalar URL
+scalar SortingDirection
 
 type StreamSession {
   app: UUID!,
@@ -11,10 +12,20 @@ type StreamSession {
   timestamp: Timestamp!
 }
 
+type StreamSessionCursor {
+  data: [ StreamSession ]!
+  count: Int!
+}
+
 type Stream {
   name: String!
   app: UUID!
   key: UUID!
+}
+
+type StreamCursor {
+  data: [ Stream ]!
+  count: Int!
 }
 
 input NameInput {
@@ -22,12 +33,24 @@ input NameInput {
   name: String!
 }
 
+input SortingInput {
+  column: String
+  direction: SortingDirection
+}
+
+input PaginationInput {
+  search: String
+  page: Int
+  limit: Int
+  sorting: SortingInput
+}
+
 type Query {
   streamSession(app: UUID!): StreamSession
   live: [ StreamSession ]!
-  streams: [ Stream ]!
+  streams(pagination: PaginationInput): StreamCursor!
   stream(app: UUID!): Stream
-  vods(app: UUID!): [ StreamSession ]!
+  vods(app: UUID!, pagination: PaginationInput): StreamSessionCursor!
 }
 
 type Mutation {

@@ -1,4 +1,5 @@
 import { query } from '@pul.se/postgres';
+import { usePagination } from '../tools';
 
 const CDN_URL = process.env.PULSE_CDN;
 
@@ -58,15 +59,32 @@ where
   });
 };
 
-export const streams = function(_, __, { user }) {
+export const streams = function(_, { pagination }, { user }) {
+  const { limit, sorting } = usePagination(pagination);
+
   return query(`
 select
-  *
+  *,
+  count(*) over() as count
 from
   streams
 where
   owner = $1 and deleted = false
-  `, [ user.uid ]);
+${ sorting }
+${ limit }
+  `, [ user.uid ]).then(function(rows) {
+    if(rows.length === 0) {
+      return {
+        data: [],
+        count: 0
+      };
+    }
+
+    return {
+      data: rows,
+      count: rows[0].count
+    }
+  });
 };
 
 export const stream = function(_, { app }, { user }) {
@@ -112,20 +130,37 @@ returning
   });
 };
 
-export const vods = function(_, { app }, { user }) {
+export const vods = function(_, { app, pagination }, { user }) {
+  const { limit, sorting } = usePagination(pagination);
+  const sortingSnippet = sorting || 'order by timestamp desc';
+
   return query(`
 select
-  *
+  *,
+  count(*) over() as count
 from
   stream_sessions
 where owner = $1 and app = $2 and state = 'STOP'
-order by timestamp desc
+${ sortingSnippet }
+${ limit }
   `, [ user.uid, app ]).then(function(rows) {
-    return rows.map(function(stream) {
+    const data = rows.map(function(stream) {
       stream.url = _formatUrl(stream.uid);
 
       return stream;
     });
+
+    if(data.length === 0) {
+      return {
+        data: [],
+        count: 0
+      };
+    }
+
+    return {
+      data,
+      count: data[0].count
+    };
   });
 };
 
