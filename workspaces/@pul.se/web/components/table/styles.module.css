@@ -6,8 +6,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--base-unit);
-
-  min-height: calc((5.5 + (5 * 3.25)) * var(--base-unit)); /* heading + 5 * rows */
+  min-height: calc((5.5 + (5 * 3.25)) * var(--base-unit) + 3.5 * var(--base-unit)); /* heading + 5 * rows + footer */
 }
 
 .heading {
@@ -38,6 +37,12 @@
   & > th {
     padding-top: calc(0.5 * var(--base-unit));
     padding-bottom: calc(0.5 * var(--base-unit));
+
+    & > svg {
+      height: var(--base-unit);
+      width: var(--base-unit);
+      padding-top: calc(0.25 * var(--base-unit));
+    }
   }
 
   & > td {
@@ -65,12 +70,6 @@
 }
 
 
-.tbody {
-  & > tr:last-child {
-    border-bottom: none;
-  }
-}
-
 .controls_heading {
   width: calc(3 * var(--base-unit));
 }
@@ -92,5 +91,39 @@
     min-height: var(--base-unit);
     max-width: var(--base-unit);
     max-height: var(--base-unit);
+  }
+}
+
+.clickable_header {
+  cursor: pointer;
+}
+
+.footer {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: var(--base-unit);
+  justify-content: flex-end;
+  gap: calc(2 * var(--base-unit));
+  font-size: calc(0.75 * var(--base-unit));
+  color: var(--color-text-secondary);
+  padding-right: var(--base-unit);
+  user-select: none;
+
+  & > div {
+    display: flex;
+    align-items: center;
+    gap: calc(0.5 * var(--base-unit));
+
+    & > span {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+
+      & > svg {
+        width: var(--base-unit);
+        height: var(--base-unit);
+      }
+    }
   }
 }

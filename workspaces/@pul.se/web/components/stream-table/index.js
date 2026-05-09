@@ -14,11 +14,14 @@ export default function StreamTable() {
   const { copy } = useClipboard(); 
 
   const streamsQuery = useGraphql(`
-query {
-  streams {
-    name
-    app
-    key
+query($pagination: PaginationInput) {
+  streams(pagination: $pagination) {
+    data {
+      name
+      app
+      key
+    }
+    count
   }
 }
   `);
@@ -39,11 +42,13 @@ query {
   const columns = useMemo(function() {
     return [{
       label: 'name',
+      sort: 'name',
       onColumn: function({ name }) {
         return name;
       }
     }, {
       label: 'app',
+      sort: 'app',
       onColumn: function({ app }, { action }) {
         const onClick = function() {
           copy(`rtmp://${ window.location.hostname }/${ app }`);
@@ -62,6 +67,7 @@ query {
       }
     }, {
       label: 'key',
+      sort: 'key',
       onColumn: function({ key }, { action }) {
         const onClick = function() {
           copy(key);
@@ -81,8 +87,15 @@ query {
     }, controls ];
   }, [ copy, controls ]);
 
-  const onData = useCallback(function() {
-    return streamsQuery().then(function({ streams }) {
+  const onData = useCallback(function({ page, limit, search, sorting }) {
+    return streamsQuery({
+      pagination: {
+        page,
+        limit,
+        search,
+        sorting
+      }
+    }).then(function({ streams }) {
       return streams;
     });
   }, [ streamsQuery ]);

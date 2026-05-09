@@ -1,9 +1,10 @@
 import { useCallback, useMemo, useRef, useState, useLayoutEffect } from 'react';
+import { CaretLineLeftIcon, CaretLeftIcon, CaretLineRightIcon, CaretRightIcon, ArrowDownIcon, ArrowUpIcon } from '@phosphor-icons/react';
 
 import Card from '../card';
 import Heading from '../heading';
 
-import { action, tbody, wrapper, heading, thead, tr, thr, table, controls_heading, controls_data } from './styles.module.css';
+import { action, wrapper, heading, thead, tr, thr, table, controls_heading, controls_data, clickable_header, footer } from './styles.module.css';
 
 const TableData = function({ children, className = '' }) {
   const ref = useRef();
@@ -45,18 +46,73 @@ export const useControls = function(onColumn) {
 
 export const Table = function({ title, columns, onData }) {
   const [ rows, setRows ] = useState([]);
+  const [ pages, setPages ] = useState(0);
+  const [ state, setState ] = useState({ page: 0, limit: 5, search: '', sorting: {} });
 
   useLayoutEffect(function() {
-    onData().then(function(rows) {
-      setRows(rows);
+    onData(state).then(function(cursor) {
+      setRows(cursor.data);
+      setPages(Math.ceil(cursor.count / state.limit));
     });
-  }, [ onData ]);
+  }, [ onData, state ]);
 
   const columnHeaders = useMemo(function() {
-    return columns.map(function({ label, hClassName = '' }, index) {
-      return <th className={ hClassName } key={ `${ label }_${ index }` }>{ label }</th>
+    return columns.map(function({ sort, label, hClassName = '' }, index) {
+      const onClick = function() {
+        if(sort == null) {
+          return;
+        }
+
+        if(state.sorting.column === sort && state.sorting.direction === 'DESC') {
+          setState({
+            ...state,
+            sorting: {}
+          });
+
+          return;
+        }
+
+        if(state.sorting.column === sort && state.sorting.direction === 'ASC') {
+          setState({
+            ...state,
+            sorting: {
+              column: sort,
+              direction: 'DESC'
+            }
+          });
+
+          return;
+        }
+
+        setState({
+          ...state,
+          sorting: {
+            column: sort,
+            direction: 'ASC'
+          }
+        });
+      };
+
+      let prefix = '';
+      if(state.sorting.column === sort && state.sorting.direction === 'ASC') {
+        prefix = (
+          <ArrowUpIcon />
+        );
+      }
+      else if(state.sorting.column === sort && state.sorting.direction === 'DESC') {
+        prefix = (
+          <ArrowDownIcon />
+        );
+      }
+      
+      let className = hClassName;
+      if(sort != null) {
+        className = `${ clickable_header } ${ hClassName }`;
+      }
+
+      return <th onClick={ onClick } className={ className } key={ `${ label }_${ index }` }>{ prefix } { label }</th>
     });
-  }, [ columns ]);
+  }, [ columns, state ]);
 
   const content = useMemo(function() {
     return rows.map(function(row, column) {
@@ -78,6 +134,29 @@ export const Table = function({ title, columns, onData }) {
     });
   }, [ columns, rows ]);
 
+  const onNext = useCallback(function() {
+    if(state.page + 1 === pages) {
+      return;
+    }
+
+    setState({
+      ...state,
+      page: state.page + 1
+    });
+  }, [ state, pages ]);
+
+  const onBack = useCallback(function() {
+    if(state.page === 0) {
+      return;
+    }
+
+    setState({
+      ...state,
+      page: state.page - 1
+    });
+  }, [ state, pages ]);
+
+
   return (
     <Card className={ wrapper }>
       <Heading secondary className={ heading }>{ title }</Heading>
@@ -87,10 +166,17 @@ export const Table = function({ title, columns, onData }) {
             { columnHeaders }
           </tr>
         </thead>
-        <tbody className={ tbody }>
+        <tbody>
           { content }
         </tbody>
       </table>
+      <div className={ footer }>
+        Page { state.page + 1 } of { pages }
+        <div>
+          <span title='Back' onClick={ onBack }><CaretLeftIcon weight='bold'/></span>
+          <span title='Next' onClick={ onNext }><CaretRightIcon  weight='bold'/></span>
+        </div>
+      </div>
     </Card>
   );
 };

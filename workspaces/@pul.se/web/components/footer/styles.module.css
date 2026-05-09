@@ -3,7 +3,6 @@
   align-items: center;
   justify-content: space-between;
   padding-top: var(--base-unit);
-  padding-bottom: var(--base-unit);
 }
 
 .text {
