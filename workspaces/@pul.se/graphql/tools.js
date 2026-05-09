@@ -7,7 +7,6 @@ export const usePagination = function(pagination = {}) {
     sorting = `order by ${ pagination.sorting.column } ${ direction }`;
   }
 
-//page, limit, search, sorting
   let limit = '';
   if(typeof(pagination.limit) === 'number' && typeof(pagination.page) === 'number') {
     limit = `limit ${ pagination.limit } offset ${ pagination.page * pagination.limit }`;
