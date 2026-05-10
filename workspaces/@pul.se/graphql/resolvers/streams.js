@@ -7,6 +7,18 @@ const _formatUrl = function(uid) {
   return `${ CDN_URL }/${ uid }/playlist.m3u8`;
 };
 
+export const addStream = function(_, __, { user }) {
+  return query(`
+insert into
+  streams(name, owner)
+values
+  (concat('New stream ', to_char(now(), 'YYYY-MM-DDTHH24:MI:SS')), $1)
+returning *
+  `, [ user.uid ]).then(function(rows) {
+    return rows[0]
+  });
+};
+
 export const streamSession = function(_, { app }, { user }) {
   return query(`
 select

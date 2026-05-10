@@ -1,0 +1,19 @@
+.wrapper {
+  font-size: calc(0.75 * var(--base-unit));
+  padding-top: calc(0.25 * var(--base-unit));
+  padding-bottom: calc(0.25 * var(--base-unit));
+  padding-left: calc(0.5 * var(--base-unit));
+  padding-right: calc(0.5 * var(--base-unit));
+  line-height: calc(0.75 * var(--base-unit));
+  border: none;
+  border-radius: calc(0.5 * var(--border-radius));
+
+  &:hover:not([disabled]) {
+    border: none;
+  }
+
+  & > svg {
+    width: calc(0.75 * var(--base-unit));
+    height: calc(0.75 * var(--base-unit));
+  }
+}
