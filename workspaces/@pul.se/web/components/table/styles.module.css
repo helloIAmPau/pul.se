@@ -116,6 +116,11 @@
     gap: calc(0.5 * var(--base-unit));
 
     & > span {
+      &[disabled] {
+        cursor: default;
+        opacity: 0.5;
+      }
+
       cursor: pointer;
       display: flex;
       align-items: center;

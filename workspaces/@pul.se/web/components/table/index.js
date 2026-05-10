@@ -156,7 +156,6 @@ export const Table = function({ title, columns, onData }) {
     });
   }, [ state, pages ]);
 
-
   return (
     <Card className={ wrapper }>
       <Heading secondary className={ heading }>{ title }</Heading>
@@ -173,8 +172,8 @@ export const Table = function({ title, columns, onData }) {
       <div className={ footer }>
         Page { state.page + 1 } of { pages }
         <div>
-          <span title='Back' onClick={ onBack }><CaretLeftIcon weight='bold'/></span>
-          <span title='Next' onClick={ onNext }><CaretRightIcon  weight='bold'/></span>
+          <span disabled={ state.page === 0 } title='Back' onClick={ onBack }><CaretLeftIcon weight='bold'/></span>
+          <span disabled={ state.page + 1 === pages }title='Next' onClick={ onNext }><CaretRightIcon  weight='bold'/></span>
         </div>
       </div>
     </Card>

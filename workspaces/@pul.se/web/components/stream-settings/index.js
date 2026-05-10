@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router';
 
-import { CaretLeftIcon } from '@phosphor-icons/react';
+import { ArrowLeftIcon } from '@phosphor-icons/react';
 
 import { StreamProvider } from '../../contexts/stream';
 
@@ -24,7 +24,7 @@ export default function StreamSettings() {
   return (
     <div className={ wrapper }>
       <Heading className={ heading }>
-        <span onClick={ onBack } title='Back'><CaretLeftIcon /></span>
+        <span onClick={ onBack } title='Back'><ArrowLeftIcon /></span>
         Stream
       </Heading>
 

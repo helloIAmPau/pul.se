@@ -8,6 +8,7 @@
   display: flex;
   align-items: center;
   user-select: none;
+  gap: calc(0.25 * var(--base-unit));
 
   & > span {
     display: flex;
