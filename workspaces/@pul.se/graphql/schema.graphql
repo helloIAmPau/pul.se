@@ -54,6 +54,7 @@ type Query {
 }
 
 type Mutation {
+  addStream: Stream
   updateName(name: NameInput!): Stream
   regenerateKey(app: UUID!): Stream
   deleteStream(app: UUID!): Stream

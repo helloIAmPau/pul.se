@@ -12,6 +12,10 @@
 .heading {
   padding-left: var(--base-unit);
   padding-right: var(--base-unit);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .table {

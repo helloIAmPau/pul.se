@@ -6,6 +6,7 @@ import { useGraphql } from '@pul.se/graphql/client';
 import useClipboard from '../../hooks/use-clipboard';
 
 import { Table, useControls } from '../table';
+import AddStreamButton from '../add-stream-button';
 
 import { cell } from './styles.module.css';
 
@@ -101,6 +102,6 @@ query($pagination: PaginationInput) {
   }, [ streamsQuery ]);
 
   return (
-    <Table onData={ onData } columns={ columns } title='Streams' />
+    <Table controls={ <AddStreamButton /> } onData={ onData } columns={ columns } title='Streams' />
   );
 };

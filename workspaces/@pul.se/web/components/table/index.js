@@ -44,7 +44,7 @@ export const useControls = function(onColumn) {
   }, [ onColumn ]);
 };
 
-export const Table = function({ title, columns, onData }) {
+export const Table = function({ title, columns, onData, controls }) {
   const [ rows, setRows ] = useState([]);
   const [ pages, setPages ] = useState(0);
   const [ state, setState ] = useState({ page: 0, limit: 5, search: '', sorting: {} });
@@ -158,7 +158,10 @@ export const Table = function({ title, columns, onData }) {
 
   return (
     <Card className={ wrapper }>
-      <Heading secondary className={ heading }>{ title }</Heading>
+      <div className={ heading }>
+        <Heading secondary>{ title }</Heading>
+        { controls }
+      </div>
       <table className={ table }>
         <thead className={ thead }>
           <tr className={ `${ tr } ${ thr }` }>
