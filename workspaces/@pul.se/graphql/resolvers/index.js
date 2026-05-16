@@ -1,12 +1,15 @@
-import { addStream, streamSession, live, streams, stream, regenerateKey, updateName, vods, deleteStream } from './streams';
+import { addStream, streams, stream, regenerateKey, updateName, deleteStream } from './streams';
+import { vods, vod } from './vods';
+import { lives, live } from './lives'
 
 export default {
   Query: {
     streams,
     stream,
-    streamSession,
+    lives,
     live,
-    vods
+    vods,
+    vod
   },
   Mutation: {
     addStream,

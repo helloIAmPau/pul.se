@@ -1,3 +1,9 @@
+const CDN_URL = process.env.PULSE_CDN;
+
+export const formatUrl = function(uid) {
+  return `${ CDN_URL }/${ uid }/playlist.m3u8`;
+};
+
 export const usePagination = function(pagination = {}) {
   let where = '';
 

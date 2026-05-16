@@ -1,10 +1,7 @@
-import { useCallback } from 'react';
-import { useNavigate } from 'react-router';
-
-import { ArrowLeftIcon } from '@phosphor-icons/react';
-
 import { StreamProvider } from '../../contexts/stream';
 
+import Section from '../section';
+import PaginationHeader from '../pagination-header';
 import Heading from '../heading';
 import TitleEditor from '../title-editor';
 import EndpointEditor from '../endpoint-editor';
@@ -12,21 +9,12 @@ import VodTable from '../vod-table';
 import Hr from '../hr';
 import DeleteStreamButton from '../delete-stream-button';
 
-import { heading, wrapper, section, section_title } from './styles.module.css';
+import { section, section_title } from './styles.module.css';
 
 export default function StreamSettings() {
-  const navigate = useNavigate();
-
-  const onBack = useCallback(function() {
-    navigate('/dashboard');
-  }, [ navigate ]);
-
   return (
-    <div className={ wrapper }>
-      <Heading className={ heading }>
-        <span onClick={ onBack } title='Back'><ArrowLeftIcon /></span>
-        Stream
-      </Heading>
+    <Section>
+      <PaginationHeader title='Stream' href='/dashboard' />
 
       <VodTable />
 
@@ -48,6 +36,6 @@ export default function StreamSettings() {
           <DeleteStreamButton />
         </div>
       </StreamProvider>
-    </div>
+    </Section>
   );
 };

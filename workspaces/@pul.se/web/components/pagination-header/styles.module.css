@@ -1,0 +1,20 @@
+.heading {
+  display: flex;
+  align-items: center;
+  user-select: none;
+  gap: calc(0.25 * var(--base-unit));
+
+  & > span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+
+    & > svg {
+      height: calc(1.25 * var(--base-unit));
+      width: calc(1.25 * var(--base-unit));
+    }
+  }
+}
+
+

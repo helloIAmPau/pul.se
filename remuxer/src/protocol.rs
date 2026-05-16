@@ -55,7 +55,7 @@ impl Protocol {
     let arc = Arc::new(mutex);
 
     // Fixing pending streaming after reboot
-    match db.query("insert into sessions (uid, app, event) select uid, app, 'STOP' as event from (select uid, app, count(event) as event_number from sessions group by uid, app) where event_number = 1", &[]).await {
+    match db.query("insert into events (uid, app, event) select uid, app, 'STOP' as event from (select uid, app, count(event) as event_number from events group by uid, app) where event_number = 1", &[]).await {
       Ok(_) => {},
       Err(error) => {
         return Err(ProtocolError::new(ProtocolErrorKind::Initialization, &error.to_string()));
@@ -103,7 +103,7 @@ impl Protocol {
       }
     };
 
-    match self.db.query("insert into sessions (uid, app, event) values ($1, $2, 'STOP') returning uid", &[ &session_uuid, &app_uuid ]).await {
+    match self.db.query("insert into events (uid, app, event) values ($1, $2, 'STOP') returning uid", &[ &session_uuid, &app_uuid ]).await {
       Ok(_) => {},
       Err(error) => {
         eprintln!("Unable stopping session - {}", error);
@@ -170,7 +170,7 @@ impl RtmpHandler for Protocol {
       }
     };
 
-    match self.db.query("select owner from streams where app = $1 and key = $2 and deleted = false", &[ &app, &key ]).await {
+    let name: String = match self.db.query("select owner, name from streams where app = $1 and key = $2 and deleted = false", &[ &app, &key ]).await {
       Ok(rows) => {
         if rows.len() != 1 {
           eprintln!("Invalid key received for app name {}", context.app);
@@ -179,6 +179,7 @@ impl RtmpHandler for Protocol {
         }
 
         println!("Stream {} validated. Allocating pipeline", context.app);
+        rows[0].get("name")
       },
       Err(error) => {
         eprintln!("Error validating connection - {}", error);
@@ -187,7 +188,7 @@ impl RtmpHandler for Protocol {
       }
     };
 
-    let session: Uuid = match self.db.query("insert into sessions (app, event) values ($1, 'PLAY') returning uid", &[ &app ]).await {
+    let session: Uuid = match self.db.query("insert into events (app, event, name) values ($1, 'PLAY', $2) returning uid", &[ &app, &name ]).await {
       Ok(rows) => {
         rows[0].get("uid")
       },

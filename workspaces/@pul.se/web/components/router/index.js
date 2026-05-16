@@ -4,7 +4,8 @@ import { BrowserRouter, Routes, Route } from 'react-router';
 import { useAuth } from '../../contexts/auth';
 
 import Layout from '../layout';
-import Theater from '../theater';
+import Live from '../live';
+import Vod from '../vod';
 import SplashScreen from '../splash-screen';
 import Signin from '../signin';
 import Dashboard from '../dashboard';
@@ -30,7 +31,8 @@ export default function Router() {
     return (
       <Route element={ <Layout /> }>
         <Route path='/dashboard' element={ <Dashboard /> } />
-        <Route element={ <Theater /> } path='/theater/:app' />
+        <Route element={ <Live /> } path='/live/:app' />
+        <Route element={ <Vod /> } path='/vods/:uid' />
         <Route element={ <StreamSettings /> } path='/streams/:app' />
       </Route>
     );

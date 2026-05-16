@@ -9,11 +9,11 @@ import Carousel from '../carousel';
 import { wrapper, dot, heading } from './styles.module.css';
 
 export default function LiveNow() {
-  const [ live, setLive ] = useState([]);
+  const [ lives, setLives ] = useState([]);
 
-  const liveQuery = useGraphql(`
+  const livesQuery = useGraphql(`
 query {
-  live {
+  lives {
     url,
     app,
     name
@@ -22,26 +22,26 @@ query {
   `);
 
   useLayoutEffect(function() {
-    liveQuery().then(function({ live }) {
-      setLive(live);
+    livesQuery().then(function({ lives }) {
+      setLives(lives);
     });
-  }, [ liveQuery ]);
+  }, [ livesQuery ]);
 
   const previewElements = useMemo(function() {
-    return live.map(function({ url, name, app }) {
+    return lives.map(function({ url, name, app }) {
       return (
         <StreamPreview key={ url } name={ name } url={ url } app={ app } />
       );
     });
-  }, [ live ]);
+  }, [ lives ]);
 
-  if(live.length === 0) {
+  if(lives.length === 0) {
     return;
   }
   
   return (
     <Card className={ wrapper }>
-      <Heading className={ heading } secondary><div className={ dot }></div> Live now ({ live.length } streams)</Heading>
+      <Heading className={ heading } secondary><div className={ dot }></div> Live now ({ lives.length } streams)</Heading>
       <Carousel>
         { previewElements }
       </Carousel>
