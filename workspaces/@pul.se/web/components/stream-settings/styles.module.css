@@ -1,28 +1,3 @@
-.wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: calc(2 * var(--base-unit));
-}
-
-.heading {
-  display: flex;
-  align-items: center;
-  user-select: none;
-  gap: calc(0.25 * var(--base-unit));
-
-  & > span {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-
-    & > svg {
-      height: calc(1.25 * var(--base-unit));
-      width: calc(1.25 * var(--base-unit));
-    }
-  }
-}
-
 .section {
   display: flex;
   flex-direction: column;

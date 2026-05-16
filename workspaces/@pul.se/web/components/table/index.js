@@ -135,7 +135,7 @@ export const Table = function({ title, columns, onData, controls }) {
   }, [ columns, rows ]);
 
   const onNext = useCallback(function() {
-    if(state.page + 1 === pages) {
+    if(state.page + 1 >= pages) {
       return;
     }
 
@@ -176,7 +176,7 @@ export const Table = function({ title, columns, onData, controls }) {
         Page { state.page + 1 } of { pages }
         <div>
           <span disabled={ state.page === 0 } title='Back' onClick={ onBack }><CaretLeftIcon weight='bold'/></span>
-          <span disabled={ state.page + 1 === pages }title='Next' onClick={ onNext }><CaretRightIcon  weight='bold'/></span>
+          <span disabled={ state.page + 1 >= pages }title='Next' onClick={ onNext }><CaretRightIcon  weight='bold'/></span>
         </div>
       </div>
     </Card>

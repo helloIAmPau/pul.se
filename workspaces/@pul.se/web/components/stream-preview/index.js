@@ -9,7 +9,7 @@ export default function StreamPreview({ url, app, name }) {
   const navigate = useNavigate();
 
   const onClick = useCallback(function() {
-    navigate(`/theater/${ app }`);
+    navigate(`/live/${ app }`);
   }, [ navigate, app ]);
 
   return (

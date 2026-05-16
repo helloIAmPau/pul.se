@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import { useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import { PlayIcon } from '@phosphor-icons/react';
 import { useGraphql } from '@pul.se/graphql/client';
 
@@ -7,13 +7,14 @@ import { useControls, Table } from '../table';
 
 export default function VodTable() {
   const { app } = useParams();
+  const navigate = useNavigate();
 
   const vodsQuery = useGraphql(`
 query($app: UUID!, $pagination: PaginationInput) {
   vods(app: $app, pagination: $pagination) {
     data {
+      uid
       name
-      url
       timestamp
     }
     count
@@ -35,9 +36,9 @@ query($app: UUID!, $pagination: PaginationInput) {
     });
   }, [ vodsQuery ]);
 
-  const onColumn = useCallback(function({ url }, { action }) {
+  const onColumn = useCallback(function({ uid }, { action }) {
     const onClick = function() {
-      console.log(url);
+      navigate(`/vods/${ uid }`);
     };
 
     return (
@@ -45,7 +46,7 @@ query($app: UUID!, $pagination: PaginationInput) {
         <PlayIcon />
       </span>
     );
-  }, []);
+  }, [ navigate ]);
   const controls = useControls(onColumn);
 
   const columns = useMemo(function() {

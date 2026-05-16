@@ -1,5 +1,6 @@
 .wrapper {
   display: flex;
   flex-direction: column;
-  gap: var(--base-unit);
+  gap: calc(2 * var(--base-unit));
 }
+
