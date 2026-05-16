@@ -4,186 +4,7 @@
 
 ---
 
-## Table of Contents
-
-- [What It Does](#what-it-does)
-- [Architecture](#architecture)
-  - [Services Overview](#services-overview)
-  - [Network Topology](#network-topology)
-  - [How Services Communicate](#how-services-communicate)
-- [Workflows](#workflows)
-  - [User Login](#user-login)
-  - [Going Live](#going-live)
-  - [Watching a Stream](#watching-a-stream)
-  - [Watching a Recording (VOD)](#watching-a-recording-vod)
-- [Database Schema](#database-schema)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Environment Variables](#environment-variables)
-  - [Running in Development](#running-in-development)
-  - [Running in Production](#running-in-production)
-  - [Applying Database Migrations](#applying-database-migrations)
-- [Contributing](#contributing)
-  - [Repository Layout](#repository-layout)
-  - [Code Style](#code-style)
-  - [Making Changes](#making-changes)
-
----
-
-## What It Does
-
-- **Live streaming**: accept RTMP streams from any compatible encoder (OBS Studio, ffmpeg, etc.)
-- **HLS delivery**: convert live RTMP to HLS segments served via CDN-friendly URLs
-- **Automatic recording**: every broadcast is saved as a VOD automatically
-- **Multi-user**: each user owns their own streams and recordings
-- **Authentication**: sign in with Google OAuth; sessions secured with RS256 JWT cookies
-- **Web dashboard**: manage streams, copy RTMP endpoints, watch live and archived content
-
----
-
-## Architecture
-
-### Services Overview
-
-| Service | Language / Runtime | Role | Port (external) |
-|---|---|---|---|
-| **ingress** | Caddy 2.11 | Reverse proxy, TLS termination | 80 / 443 |
-| **web** | Node.js 24 + React 19 | SSR frontend and management dashboard | — (behind ingress) |
-| **auth** | Node.js 24 + Express | Google OAuth and JWT issuance | — (behind ingress) |
-| **graphql** | Node.js 24 + Express | GraphQL API for stream data | — (behind ingress) |
-| **buckets** | Node.js 24 + Express | Proxies HLS files from object storage | — (behind ingress) |
-| **remuxer** | Rust + GStreamer | RTMP server, converts to HLS, writes to S3 | 1935 (TCP) |
-| **storage** | RustFS | S3-compatible object store (HLS segments + playlists) | — (internal) |
-| **postgres** | PostgreSQL 16 | Relational database (users, streams, sessions) | — (internal) |
-
-### Network Topology
-
-```
-                          Internet
-                              │
-                 ┌────────────▼────────────┐
-                 │         ingress          │  :80 / :443
-                 │       (Caddy 2.11)       │  :1935 RTMP (remuxer direct)
-                 └──┬───────┬──────┬───────┘
-                    │       │      │
-           /auth/*  │  /graphql    │ /buckets/*    (everything else)
-                    │       │      │                      │
-              ┌─────▼─┐ ┌──▼──┐ ┌─▼──────┐         ┌────▼───┐
-              │ auth  │ │graph│ │buckets │         │  web   │
-              │       │ │ql   │ │        │         │        │
-              └───┬───┘ └──┬──┘ └───┬────┘         └────────┘
-                  │        │        │
-         ─────────┴────────┴────────┴─────── backend network
-                  │        │        │
-              ┌───▼────────▼────────▼───┐
-              │        postgres          │
-              └──────────────────────────┘
-              ┌──────────────────────────┐
-              │         storage           │  (S3-compatible, RustFS)
-              └──────────────────────────┘
-                         ▲
-              ┌──────────┴───────────┐
-              │       remuxer         │  :1935
-              └──────────────────────┘
-```
-
-### How Services Communicate
-
-**Ingress (Caddy)** routes HTTP traffic based on path prefix:
-
-| Path | Upstream |
-|---|---|
-| `/auth/*` | `http://auth` |
-| `/graphql` | `http://graphql` |
-| `/buckets/*` | `http://buckets` |
-| everything else | `http://web` |
-
-**auth** talks to **postgres** to upsert users on login.
-
-**graphql** talks to **postgres** to query streams and sessions. It reads the JWT public key from the environment to authenticate requests. Every GraphQL query/mutation is scoped to the calling user via their JWT.
-
-**buckets** talks to **storage** (S3 API at `http://storage:9000`) to fetch HLS playlists and segments, and streams them back to the browser.
-
-**remuxer** receives RTMP connections on port 1935 directly (not through Caddy). It writes HLS segments to **storage** over S3 and records `PLAY` / `STOP` session events to **postgres**.
-
-**web** is a React 19 SSR app. The browser talks to `/auth/valid` (via `auth`) to check login state, to `/graphql` (via `graphql`) for all data, and to `/buckets/streams/:session/:file` (via `buckets`) for HLS video.
-
----
-
-## Workflows
-
-### User Login
-
-1. Browser visits `/` (landing page).
-2. User clicks "Sign in with Google".
-3. Browser calls `GET /auth/providers/google` — receives the Google OAuth authorization URL.
-4. Browser redirects to Google consent screen.
-5. Google redirects to `GET /auth/callback?code=…&state=…`.
-6. **auth** exchanges the code for an access token, fetches the user's email from Google.
-7. User is inserted into `users` table (or updated if already exists).
-8. A signed RS256 JWT is set as an `httpOnly` `ACCESS_TOKEN` cookie.
-9. Browser is redirected back to the original URL.
-
-### Going Live
-
-1. User opens the dashboard, copies their RTMP URL (`rtmp://<hostname>/<app>`) and stream key.
-2. User configures OBS (or any RTMP encoder) with those values.
-3. Encoder connects to **remuxer** on port 1935.
-4. **remuxer** validates the stream key against **postgres**.
-5. GStreamer pipeline converts the RTMP bitstream to HLS:
-   - `.ts` segments uploaded to `s3://streams/<session_uid>/<segment>.ts`
-   - `playlist.m3u8` updated continuously
-6. A `PLAY` session event is inserted into **postgres**.
-7. The dashboard shows the stream in the "Live Now" carousel.
-
-### Watching a Stream
-
-1. Browser queries `GET /graphql` → `live` → returns all active sessions with their HLS URLs.
-2. `StreamPreview` cards appear in the "Live Now" section.
-3. User navigates to `/theater/<app>`.
-4. Browser queries `streamSession(app)` → gets the HLS playlist URL (`/buckets/streams/<session>/playlist.m3u8`).
-5. `HLS.js` fetches the playlist and individual `.ts` segments through **buckets**, which proxies them from **storage**.
-
-### Watching a Recording (VOD)
-
-1. Broadcast ends; **remuxer** writes a `STOP` session event to **postgres**.
-2. HLS segments remain in **storage** permanently.
-3. User navigates to `/streams/<app>` (stream settings).
-4. Browser queries `vods(app)` → returns all past sessions with state `STOP`.
-5. `VodTable` lists the recordings; user clicks one to watch using the same HLS player.
-
----
-
-## Database Schema
-
-```
-users
-  uid       UUID   PK  (auto-generated)
-  email     TEXT       (unique)
-
-streams
-  key       UUID       (RTMP stream key, auto-generated)
-  app       UUID       (stream ID, used in RTMP path, auto-generated)
-  name      TEXT       (display name)
-  owner     UUID  FK → users.uid
-  deleted   BOOL       (soft-delete flag)
-
-sessions
-  uid       UUID   PK  (session ID, auto-generated)
-  app       UUID  FK → streams.app
-  event     TEXT       ('PLAY' | 'STOP')
-  timestamp TIMESTAMP  (auto: now())
-
--- View: stream_sessions
--- Joins sessions + streams, exposes: uid, app, name, state, timestamp, owner
--- Ordered by timestamp DESC
-```
-
-Every stream broadcast creates two session rows: one `PLAY` (on connect) and one `STOP` (on disconnect). The session `uid` is used as the S3 prefix for that broadcast's HLS files, making VOD lookup trivial.
-
----
-
-## Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 
@@ -235,22 +56,18 @@ source .env.local
 npm run develop
 ```
 
-Development mode (`docker-compose.develop.yml`) mounts the source directories into the containers and runs each service in watch mode. The web UI is served on `http://localhost:8080`.
-
-The RustFS storage console is available at `http://localhost:9001` in development.
+The web UI is served on `http://localhost:8080`. The RustFS storage console is available at `http://localhost:9001`.
 
 ### Running in Production
 
 ```bash
-# 1. Export environment variables (or use a secrets manager)
+# 1. Export environment variables
 export PULSE_HOSTNAME=https://example.com
-# ... set all variables listed above
+# ... set all variables
 
 # 2. Build and start
 docker compose up --build -d
 ```
-
-The stack listens on ports `80` and `443` (Caddy handles TLS automatically via ACME if `PULSE_HOSTNAME` uses `https://`). RTMP is on port `1935`.
 
 ### Applying Database Migrations
 
@@ -260,66 +77,160 @@ Run migrations after first boot and after any schema changes:
 npm run migrate
 ```
 
-This pipes `migrations.sql` into the running `postgres` container. The script is idempotent (`CREATE TABLE IF NOT EXISTS`, `CREATE OR REPLACE VIEW`).
+---
+
+## 🏗️ Architecture
+
+### Services Overview
+
+| Service | Language / Runtime | Role |
+|---|---|---|
+| **ingress** | Caddy 2.11 | Reverse proxy, TLS termination, and path-based routing. |
+| **web** | Node.js 24 + React 19 | SSR frontend and management dashboard. |
+| **auth** | Node.js 24 + Express | Google OAuth 2.0 and JWT issuance (RS256). |
+| **graphql** | Node.js 24 + Express | API for stream data, sessions, and user settings. |
+| **buckets** | Node.js 24 + Express | Proxies HLS files from S3-compatible storage to the browser. |
+| **remuxer** | Rust + GStreamer | RTMP server, HLS transcoder, and S3 uploader. |
+| **storage** | RustFS | S3-compatible object store for HLS segments and playlists. |
+| **postgres** | PostgreSQL 16 | Relational database for users, streams, and session events. |
+
+### Network Topology
+
+```
+                          Internet
+                              │
+                 ┌────────────▼────────────┐
+                 │         ingress          │  :80 / :443
+                 │       (Caddy 2.11)       │  :1935 RTMP (remuxer direct)
+                 └──┬───────┬──────┬───────┘
+                    │       │      │
+           /auth/*  │  /graphql    │ /buckets/*    (everything else)
+                    │       │      │                      │
+              ┌─────▼─┐ ┌──▼──┐ ┌─▼──────┐         ┌────▼───┐
+              │ auth  │ │graph│ │buckets │         │  web   │
+              │       │ │ql   │ │        │         │        │
+              └───┬───┘ └──┬──┘ └───┬────┘         └────────┘
+                  │        │        │
+         ─────────┴────────┴────────┴─────── backend network
+                  │        │        │
+              ┌───▼────────▼────────▼───┐
+              │        postgres          │
+              └──────────────────────────┘
+              ┌──────────────────────────┐
+              │         storage           │  (S3-compatible, RustFS)
+              └──────────────────────────┘
+                         ▲
+              ┌──────────┴───────────┐
+              │       remuxer         │  :1935
+              └──────────────────────┘
+```
 
 ---
 
-## Contributing
+## 📦 Components
 
-### Repository Layout
+### `remuxer/`
+A high-performance RTMP server built in Rust. It uses GStreamer to transcode incoming RTMP bitstreams into HLS segments (`.ts`) and playlists (`.m3u8`). It handles:
+- **RTMP Ingest**: Listening on port 1935.
+- **Transcoding**: Hardware-accelerated (NVIDIA) HLS segmenting.
+- **S3 Uploads**: Writing segments directly to the `storage` service.
+- **State Management**: Recording `PLAY` and `STOP` events in PostgreSQL.
 
-```
-/
-├── workspaces/@pul.se/
-│   ├── web/          # React 19 SSR app (Express + esbuild)
-│   ├── auth/         # OAuth + JWT service (Express)
-│   ├── graphql/      # GraphQL API (Express + graphql-http)
-│   ├── buckets/      # S3 file proxy (Express + AWS SDK)
-│   ├── client/       # Shared HTTP fetch wrapper
-│   └── postgres/     # Shared PostgreSQL pool
-├── remuxer/          # Rust RTMP server + GStreamer pipeline
-│   └── src/
-│       ├── main.rs       # Bootstrap: S3 bucket, GStreamer init, DB pool, RTMP server
-│       ├── protocol.rs   # RTMP connection/stream lifecycle
-│       ├── stream.rs     # GStreamer HLS pipeline
-│       ├── storage.rs    # S3 upload client
-│       └── postgres.rs   # Session event recording
-├── data/             # Docker volumes (postgres, rustfs) — not committed
-├── migrations.sql    # Database schema (idempotent)
-├── Dockerfile        # Multi-stage build for all Node.js services
-├── docker-compose.yml
-├── docker-compose.develop.yml
-└── package.json      # npm workspace root
-```
+### `@pul.se/web`
+The main frontend application built with React 19 and served with SSR. It includes:
+- **Landing Page**: Information for new users.
+- **Dashboard**: For managing streams, keys, and RTMP endpoints.
+- **Theater**: A custom HLS player (using `hls.js`) for watching live and archived content.
 
-### Code Style
+### `@pul.se/graphql`
+The data API layer. It provides a GraphQL schema for querying:
+- **Live Streams**: Active broadcast sessions.
+- **VODs**: Archived recordings.
+- **User Streams**: Stream configurations (keys, names, apps).
 
-**JavaScript / React**
+### `@pul.se/auth`
+Handles authentication via Google OAuth 2.0. It issues RS256-signed JWTs stored in `httpOnly` cookies, which are then verified by other services using the public key.
 
-- Use `function` declarations and expressions — no arrow functions.
-- No ternary operators or `&&` short-circuits in JSX — use `if` guard clauses.
-- Always use explicit comparisons (`=== true`, `!== null`) — no truthy/falsy coercion.
-- List all dependencies in `useCallback` and `useMemo`.
-- Make HTTP requests through the `@pul.se/client` wrapper; in React components use the `useGraphql` or `useAuth` hooks.
+### `@pul.se/buckets`
+A proxy service that fetches HLS files from the private `storage` service and streams them to the browser. This prevents direct exposure of the storage service and allows for future access control.
 
-**Rust**
+### `@pul.se/postgres`
+A shared internal package that manages the PostgreSQL connection pool using `pg`.
 
-- Follow standard `rustfmt` and `clippy` conventions.
-- Keep S3, PostgreSQL, and GStreamer concerns in their respective modules (`storage.rs`, `postgres.rs`, `stream.rs`).
+### `@pul.se/client`
+A shared HTTP client wrapper that handles fetch requests, JSON parsing, and GraphQL error normalization.
 
-### Making Changes
+---
 
-1. **Fork** the repository and create a feature branch from `master`.
-2. Make your changes, keeping each commit focused on a single concern.
-3. For Node.js services, verify the build:
-   ```bash
-   npm run build --workspace=@pul.se/<service>
-   ```
-4. For the remuxer:
-   ```bash
-   cd remuxer && cargo build
-   ```
-5. Run the full stack locally with `npm run develop` and test your changes end-to-end.
-6. Open a pull request against `master` with a clear description of what changed and why.
+## 🔄 Workflows
 
-For significant changes (new features, schema changes, new services) open an issue first to discuss the approach before writing code.
+### Going Live
+1. Encoder (OBS) connects to `remuxer` on port 1935.
+2. `remuxer` validates the stream key against `postgres`.
+3. GStreamer pipeline starts, uploading segments to `s3://streams/<session_uid>/`.
+4. A `PLAY` event is inserted into the `events` table.
+5. The stream appears as "Live" in the web dashboard.
+
+### Watching a Stream
+1. Browser fetches active sessions via GraphQL.
+2. Theater page loads the HLS playlist through the `/buckets/` proxy.
+3. `HLS.js` manages segment fetching and playback.
+
+---
+
+## 🗄️ Database Schema
+
+### `users`
+- `uid` (UUID): Primary key.
+- `email` (TEXT): Unique user email.
+
+### `streams`
+- `app` (UUID): Unique stream identifier used in the RTMP path.
+- `key` (UUID): Private stream key for encoder authentication.
+- `name` (TEXT): Display name for the stream.
+- `owner` (UUID): FK to `users.uid`.
+- `deleted` (BOOL): Soft-delete flag.
+
+### `events`
+- `uid` (UUID): Session identifier for a specific broadcast.
+- `app` (UUID): FK to `streams.app`.
+- `name` (TEXT): Title of the broadcast session.
+- `event` (TEXT): Event type (`PLAY` | `STOP`).
+- `timestamp` (TIMESTAMP): Time of the event.
+
+### `sessions` (View)
+A convenience view that aggregates `events` by `app` and `uid`, joining with `streams` to provide a unified broadcast record.
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions! Please follow these guidelines to ensure a smooth process.
+
+### 📝 Reporting Issues & Planning
+- **All code changes must be linked to an issue.**
+- Before starting work, please open an issue to discuss your proposed changes or report a bug.
+- Pull requests that do not reference an open issue will be closed.
+
+### 🎨 Code Style
+
+#### JavaScript & React
+- **Declarative Functions**: Use `function` declarations and expressions. **No arrow functions** (`const x = () => ...`).
+- **Explicit JSX Control Flow**: Use `if` guard clauses. **No ternary operators** (`a ? b : c`) or **short-circuits** (`a && b`) inside JSX.
+- **Strict Comparisons**: Always use explicit comparisons (`=== true`, `!== null`, `=== undefined`). No truthy/falsy coercion.
+- **Hooks**: Always list all dependencies in `useCallback` and `useMemo`.
+- **Data Fetching**: Use the `@pul.se/client` wrapper or the provided `useGraphql`/`useAuth` hooks.
+
+#### Rust
+- Adhere to standard `rustfmt` and `clippy` conventions.
+- Maintain strict modularity: keep S3, DB, and GStreamer logic in their respective modules.
+
+### 🚀 Making Changes
+1. **Fork** the repository and create a feature branch.
+2. Ensure your changes are focused and well-documented.
+3. **Link to an issue** in your commit messages (e.g., `Fixes #123`).
+4. **Build and Test**:
+   - Web services: `npm run build --workspace=@pul.se/<service>`
+   - Remuxer: `cd remuxer && cargo build`
+   - Run the full stack with `npm run develop` to verify changes end-to-end.
+5. Open a **Pull Request** against `master`.
