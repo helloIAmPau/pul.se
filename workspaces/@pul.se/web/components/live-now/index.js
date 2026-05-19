@@ -1,5 +1,6 @@
 import { useLayoutEffect, useState, useMemo } from 'react';
 import { useGraphql } from '@pul.se/graphql/client';
+import { useBroadcast } from '@pul.se/broadcast/client';
 
 import StreamPreview from '../stream-preview';
 import Card from '../card';
@@ -10,6 +11,7 @@ import { wrapper, dot, heading } from './styles.module.css';
 
 export default function LiveNow() {
   const [ lives, setLives ] = useState([]);
+  const { socket } = useBroadcast();
 
   const livesQuery = useGraphql(`
 query {
@@ -22,10 +24,19 @@ query {
   `);
 
   useLayoutEffect(function() {
-    livesQuery().then(function({ lives }) {
-      setLives(lives);
-    });
-  }, [ livesQuery ]);
+    if(socket == null) {
+      return;
+    }
+
+    const update = function() {
+      livesQuery().then(function({ lives }) {
+        setLives(lives);
+      });
+    };
+    socket.on('events', update);
+
+    update();
+  }, [ livesQuery, socket ]);
 
   const previewElements = useMemo(function() {
     return lives.map(function({ url, name, app }) {

@@ -1,0 +1,16 @@
+{
+  "name": "@pul.se/broadcast",
+  "version": "0.0.0",
+  "scripts": {
+    "build": "esbuild index.js --bundle --outdir=dist --platform=node --target=node24.11 --sourcemap --loader:.graphql=text",
+    "develop": "npm run build && concurrently 'npm run build -- --watch' 'node --watch dist/index.js'"
+  },
+  "devDependencies": {
+    "concurrently": "9.2.1",
+    "cookie": "0.7.2",
+    "esbuild": "0.28.0",
+    "react": "19.2.5",
+    "socket.io": "4.8.3",
+    "socket.io-client": "4.8.3"
+  }
+}

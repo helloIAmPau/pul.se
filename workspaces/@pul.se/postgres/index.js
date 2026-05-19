@@ -12,3 +12,13 @@ export const query = function(sql, variables) {
     return rows;
   });
 };
+
+export const listen = function(handler) {
+  return pool.connect().then(function(client) {
+    client.on('notification', function({ payload }) {
+      handler(JSON.parse(payload));
+    });
+
+    return client.query('listen on_change');
+  });
+};

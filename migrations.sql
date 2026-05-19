@@ -29,11 +29,11 @@ with events_by_app as (
   select
     uid,
     app,
-    (array_agg(name) filter (where name is not null))[1] as name,
-    (array_agg(event))[1] as event,
+    (array_agg(name order by timestamp desc) filter (where name is not null))[1] as name,
+    (array_agg(event order by timestamp desc))[1] as event,
     min(timestamp) as timestamp
   from
-    (select * from events order by timestamp desc)
+    events
   group by app, uid
 )
 
@@ -48,5 +48,39 @@ from events_by_app
 left join streams
 on streams.app = events_by_app.app
 );
+
+create or replace function on_change()
+returns trigger as $$
+declare
+  payload JSON;
+  data RECORD;
+  room uuid;
+begin
+  if (TG_OP = 'DELETE') then
+    data := OLD;
+  else
+    data := NEW;
+  end if;
+
+  select owner into room from streams where app = data.app;
+
+  payload := json_build_object('table', TG_TABLE_NAME, 'operation', TG_OP, 'room', room, 'data', row_to_json(data));
+  perform pg_notify('on_change', payload::text);
+
+  return null;
+end;
+$$ language plpgsql;
+
+drop trigger if exists on_streams_change on streams;
+create trigger on_streams_change
+after insert or update or delete on streams
+for each row
+execute procedure on_change();
+
+drop trigger if exists on_events_change on events;
+create trigger on_events_change
+after insert or update or delete on events
+for each row
+execute procedure on_change();
 
 commit;

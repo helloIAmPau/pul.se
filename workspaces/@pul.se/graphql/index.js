@@ -1,6 +1,5 @@
 import Express from 'express';
 import cookieParser from 'cookie-parser';
-
 import { createHandler } from 'graphql-http/lib/use/express';
 import { makeExecutableSchema } from '@graphql-tools/schema';
 import { verify } from '@pul.se/auth/jwt';
@@ -10,13 +9,12 @@ import typeDefs from './schema.graphql';
 
 const app = Express();
 app.use(cookieParser());
+app.use(verify);
 
 const schema = makeExecutableSchema({
   typeDefs,
   resolvers
 });
-
-app.use(verify);
 
 app.post('/graphql', createHandler({
   schema,
