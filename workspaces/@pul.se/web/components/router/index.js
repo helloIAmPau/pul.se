@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router';
+import { BroadcastProvider } from '@pul.se/broadcast/client'; 
 
 import { useAuth } from '../../contexts/auth';
 
@@ -29,7 +30,7 @@ export default function Router() {
     }
 
     return (
-      <Route element={ <Layout /> }>
+      <Route element={ <BroadcastProvider><Layout /></BroadcastProvider> }>
         <Route path='/dashboard' element={ <Dashboard /> } />
         <Route element={ <Live /> } path='/live/:app' />
         <Route element={ <Vod /> } path='/vods/:uid' />
