@@ -90,39 +90,42 @@ npm run migrate
 | **auth** | Node.js 24 + Express | Google OAuth 2.0 and JWT issuance (RS256). |
 | **graphql** | Node.js 24 + Express | API for stream data, sessions, and user settings. |
 | **buckets** | Node.js 24 + Express | Proxies HLS files from S3-compatible storage to the browser. |
+| **broadcast** | Node.js 24 + Socket.io | Real-time event broadcasting to the web UI. |
 | **remuxer** | Rust + GStreamer | RTMP server, HLS transcoder, and S3 uploader. |
 | **storage** | RustFS | S3-compatible object store for HLS segments and playlists. |
 | **postgres** | PostgreSQL 16 | Relational database for users, streams, and session events. |
 
 ### Network Topology
 
-```
-                          Internet
-                              │
-                 ┌────────────▼────────────┐
-                 │         ingress          │  :80 / :443
-                 │       (Caddy 2.11)       │  :1935 RTMP (remuxer direct)
-                 └──┬───────┬──────┬───────┘
-                    │       │      │
-           /auth/*  │  /graphql    │ /buckets/*    (everything else)
-                    │       │      │                      │
-              ┌─────▼─┐ ┌──▼──┐ ┌─▼──────┐         ┌────▼───┐
-              │ auth  │ │graph│ │buckets │         │  web   │
-              │       │ │ql   │ │        │         │        │
-              └───┬───┘ └──┬──┘ └───┬────┘         └────────┘
-                  │        │        │
-         ─────────┴────────┴────────┴─────── backend network
-                  │        │        │
-              ┌───▼────────▼────────▼───┐
-              │        postgres          │
-              └──────────────────────────┘
-              ┌──────────────────────────┐
-              │         storage           │  (S3-compatible, RustFS)
-              └──────────────────────────┘
-                         ▲
-              ┌──────────┴───────────┐
-              │       remuxer         │  :1935
-              └──────────────────────┘
+```text
+                              Internet
+                                 │
+            ┌────────────────────┴─────────────────────────────────────┐
+            │                                                          │
+   (HTTP :80 / :443)                                             (RTMP :1935)
+ ┌──────────▼──────────┐                                    ┌──────────▼──────────┐
+ │       ingress       │                                    │       remuxer       │
+ │    (Caddy 2.11)     │                                    │  (Rust / GStreamer) │
+ └─┬───┬───┬───┬───┬───┘                                    └─────┬─────────┬─────┘
+   │   │   │   │   │                                              │         │
+   │   │   │   │   └─────────────────────────────┐                │         │
+   │   │   │   └───────────────────┐             │                │         │  
+   │   │   └─────────┐             │             │                │         │  
+ ┌─▼─┐┌▼───┐     ┌───▼───┐     ┌───▼─────┐   ┌───▼───┐            │         │  
+ │web││auth│     │graphql│     │broadcast│   │buckets│────────────┼──┐      │  
+ └───┘└─┬──┘     └───┬───┘     └─────┬───┘   └───────┘            │  │      │  
+        │            │               │                            │  │      │      
+────────┼────────────┼───────────────┼────────────────────────────┼──┼──────┼──────────── backend network
+        │            │               │                            │  │      │      
+        └────────────┴───────────────┴───┐                        │  │      │      
+                                         │                        │  │      │      
+                                     ┌───▼────────────────────────▼┐ │      │      
+                                     │          postgres           │ │      │      
+                                     └─────────────────────────────┘ │      │      
+                                                                     │      │      
+                                                                   ┌─▼──────▼─┐
+                                                                   │  storage │
+                                                                   └──────────┘
 ```
 
 ---
@@ -139,20 +142,25 @@ A high-performance RTMP server built in Rust. It uses GStreamer to transcode inc
 ### `@pul.se/web`
 The main frontend application built with React 19 and served with SSR. It includes:
 - **Landing Page**: Information for new users.
-- **Dashboard**: For managing streams, keys, and RTMP endpoints.
+- **Dashboard**: A real-time management dashboard for streams, keys, and RTMP endpoints.
 - **Theater**: A custom HLS player (using `hls.js`) for watching live and archived content.
+- **Settings**: Per-stream configuration, including title management and stream key regeneration.
 
 ### `@pul.se/graphql`
-The data API layer. It provides a GraphQL schema for querying:
+The data API layer. It provides a GraphQL schema for:
 - **Live Streams**: Active broadcast sessions.
-- **VODs**: Archived recordings.
-- **User Streams**: Stream configurations (keys, names, apps).
+- **VODs**: Paginated archived recordings with metadata.
+- **User Streams**: Paginated stream configurations (keys, names, apps).
+- **Management**: Mutations for adding, renaming, and deleting streams, as well as regenerating stream keys.
 
 ### `@pul.se/auth`
 Handles authentication via Google OAuth 2.0. It issues RS256-signed JWTs stored in `httpOnly` cookies, which are then verified by other services using the public key.
 
 ### `@pul.se/buckets`
 A proxy service that fetches HLS files from the private `storage` service and streams them to the browser. This prevents direct exposure of the storage service and allows for future access control.
+
+### `@pul.se/broadcast`
+A WebSocket service powered by `socket.io`. It leverages PostgreSQL `LISTEN`/`NOTIFY` to broadcast real-time database changes (e.g., stream status updates, new recordings) directly to connected clients.
 
 ### `@pul.se/postgres`
 A shared internal package that manages the PostgreSQL connection pool using `pg`.
@@ -175,6 +183,12 @@ A shared HTTP client wrapper that handles fetch requests, JSON parsing, and Grap
 1. Browser fetches active sessions via GraphQL.
 2. Theater page loads the HLS playlist through the `/buckets/` proxy.
 3. `HLS.js` manages segment fetching and playback.
+
+### Real-time Updates
+1. Any database change (e.g., a new stream starting or stopping) triggers a PostgreSQL `NOTIFY`.
+2. The `broadcast` service receives the notification and identifies the relevant user.
+3. The update is pushed via WebSocket to the user's browser.
+4. The Dashboard or Theater UI updates instantly without requiring a page refresh.
 
 ---
 
