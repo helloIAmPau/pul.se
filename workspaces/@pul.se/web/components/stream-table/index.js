@@ -102,6 +102,6 @@ query($pagination: PaginationInput) {
   }, [ streamsQuery ]);
 
   return (
-    <Table controls={ <AddStreamButton /> } onData={ onData } columns={ columns } title='Streams' />
+    <Table watch='streams' controls={ <AddStreamButton /> } onData={ onData } columns={ columns } title='Streams' />
   );
 };

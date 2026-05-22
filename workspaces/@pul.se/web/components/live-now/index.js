@@ -34,8 +34,11 @@ query {
       });
     };
     socket.on('events', update);
-
     update();
+
+    return function() {
+      socket.off('events', update);
+    };
   }, [ livesQuery, socket ]);
 
   const previewElements = useMemo(function() {

@@ -1,6 +1,7 @@
 import { useState, useLayoutEffect } from 'react';
 import { useParams } from 'react-router';
 import { useGraphql } from '@pul.se/graphql/client';
+import { useBroadcast } from '@pul.se/broadcast/client';
 
 import Heading from '../heading';
 import Section from '../section';
@@ -8,8 +9,8 @@ import PaginationHeader from '../pagination-header';
 import Theater from '../theater';
 
 export default function Live() {
-  const [ state, setState ] = useState('LOADING');
   const [ live, setLive ] = useState();
+  const { socket } = useBroadcast();
 
   const { app } = useParams();
   const liveQuery = useGraphql(`
@@ -22,17 +23,28 @@ query($app: UUID!) {
   `);
 
   useLayoutEffect(function() {
-    setState('LOADING');
+    if(socket == null) {
+      return;
+    }
 
-    liveQuery({ app }).then(function({ live }) {
-      setLive(live);
-      setState('DONE')
+    const update = function() {
+      liveQuery({ app }).then(function({ live }) {
+        setLive(live);
+      });
+    };
+    socket.on('events', function(event) {
+      if(event.app !== app) {
+        return;
+      }
+
+      update();
     });
-  }, [ liveQuery, app ]);
+    update();
 
-  if(state === 'LOADING') {
-    return;
-  }
+    return function() {
+      socket.off('events', update);
+    };
+  }, [ socket, liveQuery, app ]);
 
   if(live == null) {
     return (

@@ -66,6 +66,6 @@ query($app: UUID!, $pagination: PaginationInput) {
   }, [ controls ]);
 
   return (
-    <Table onData={ onData } columns={ columns } title='VODs' />
+    <Table watch='events' onData={ onData } columns={ columns } title='VODs' />
   );
 };

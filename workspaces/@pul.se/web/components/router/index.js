@@ -32,9 +32,9 @@ export default function Router() {
     return (
       <Route element={ <BroadcastProvider><Layout /></BroadcastProvider> }>
         <Route path='/dashboard' element={ <Dashboard /> } />
+        <Route element={ <StreamSettings /> } path='/streams/:app' />
         <Route element={ <Live /> } path='/live/:app' />
         <Route element={ <Vod /> } path='/vods/:uid' />
-        <Route element={ <StreamSettings /> } path='/streams/:app' />
       </Route>
     );
   }, [ state ]);

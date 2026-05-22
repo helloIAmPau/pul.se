@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState, useLayoutEffect } from 'react';
 import { CaretLineLeftIcon, CaretLeftIcon, CaretLineRightIcon, CaretRightIcon, ArrowDownIcon, ArrowUpIcon } from '@phosphor-icons/react';
+import { useBroadcast } from '@pul.se/broadcast/client';
 
 import Card from '../card';
 import Heading from '../heading';
@@ -44,17 +45,35 @@ export const useControls = function(onColumn) {
   }, [ onColumn ]);
 };
 
-export const Table = function({ title, columns, onData, controls }) {
+export const Table = function({ title, columns, onData, watch, controls }) {
   const [ rows, setRows ] = useState([]);
   const [ pages, setPages ] = useState(0);
   const [ state, setState ] = useState({ page: 0, limit: 5, search: '', sorting: {} });
+  const { socket } = useBroadcast();
 
   useLayoutEffect(function() {
-    onData(state).then(function(cursor) {
-      setRows(cursor.data);
-      setPages(Math.ceil(cursor.count / state.limit));
-    });
-  }, [ onData, state ]);
+    const update = function() {
+      onData(state).then(function(cursor) {
+        setRows(cursor.data);
+        setPages(Math.ceil(cursor.count / state.limit));
+      });
+    };
+
+    if(watch == null) {
+      return update();
+    }
+
+    if(socket == null) {
+      return;
+    }
+
+    socket.on(watch, update);
+    update();
+    
+    return function() {
+      socket.off(watch, update);
+    };
+  }, [ onData, state, watch, socket ]);
 
   const columnHeaders = useMemo(function() {
     return columns.map(function({ sort, label, hClassName = '' }, index) {

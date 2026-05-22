@@ -8,6 +8,28 @@ create table if not exists users (
 drop index if exists users_unique_email;
 create unique index users_unique_email on users (email);
 
+create or replace function on_change()
+returns trigger as $$
+declare
+  payload JSON;
+  data RECORD;
+  room uuid;
+begin
+  if (TG_OP = 'DELETE') then
+    data := OLD;
+  else
+    data := NEW;
+  end if;
+
+  select owner into room from streams where app = data.app;
+
+  payload := json_build_object('table', TG_TABLE_NAME, 'operation', TG_OP, 'room', room, 'data', row_to_json(data));
+  perform pg_notify('on_change', payload::text);
+
+  return null;
+end;
+$$ language plpgsql;
+
 create table if not exists streams (
   key uuid not null default gen_random_uuid(),
   app uuid not null default gen_random_uuid(),
@@ -16,6 +38,12 @@ create table if not exists streams (
   deleted boolean not null default false
 );
 
+drop trigger if exists on_streams_change on streams;
+create trigger on_streams_change
+after insert or update or delete on streams
+for each row
+execute procedure on_change();
+
 create table if not exists events (
   uid uuid not null default gen_random_uuid(),
   app uuid not null,
@@ -23,6 +51,12 @@ create table if not exists events (
   event text not null,
   timestamp timestamp not null default now()
 );
+
+drop trigger if exists on_events_change on events;
+create trigger on_events_change
+after insert or update or delete on events
+for each row
+execute procedure on_change();
 
 create or replace view sessions as (
 with events_by_app as (
@@ -48,39 +82,5 @@ from events_by_app
 left join streams
 on streams.app = events_by_app.app
 );
-
-create or replace function on_change()
-returns trigger as $$
-declare
-  payload JSON;
-  data RECORD;
-  room uuid;
-begin
-  if (TG_OP = 'DELETE') then
-    data := OLD;
-  else
-    data := NEW;
-  end if;
-
-  select owner into room from streams where app = data.app;
-
-  payload := json_build_object('table', TG_TABLE_NAME, 'operation', TG_OP, 'room', room, 'data', row_to_json(data));
-  perform pg_notify('on_change', payload::text);
-
-  return null;
-end;
-$$ language plpgsql;
-
-drop trigger if exists on_streams_change on streams;
-create trigger on_streams_change
-after insert or update or delete on streams
-for each row
-execute procedure on_change();
-
-drop trigger if exists on_events_change on events;
-create trigger on_events_change
-after insert or update or delete on events
-for each row
-execute procedure on_change();
 
 commit;
