@@ -216,9 +216,9 @@ impl RtmpHandler for Protocol {
   }
 
   async fn on_pause(&self, context: &StreamContext) {
-    let registry = self.registry.lock().await;
+    let mut registry = self.registry.lock().await;
 
-    match registry.get(&context.session.app) {
+    match registry.get_mut(&context.session.app) {
       Ok(stream) => {
         stream.pause();
       },
@@ -231,9 +231,9 @@ impl RtmpHandler for Protocol {
   }
 
   async fn on_unpause(&self, context: &StreamContext) {
-    let registry = self.registry.lock().await;
+    let mut registry = self.registry.lock().await;
 
-    match registry.get(&context.session.app) {
+    match registry.get_mut(&context.session.app) {
       Ok(stream) => {
         stream.play();
       },

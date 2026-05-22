@@ -67,6 +67,17 @@ impl StreamRegistry {
     self.streams.remove(app);
   }
 
+  pub fn get_mut(&mut self, app: &str) -> Result<&mut Stream, StreamError> {
+    match self.streams.get_mut(app) {
+      Some(stream) => {
+        return Ok(stream);
+      },
+      None => {
+        return Err(StreamError::new(StreamErrorKind::StreamRegistry, "No stream found"));
+      }
+    };
+  }
+
   pub fn get(&self, app: &str) -> Result<&Stream, StreamError> {
     match self.streams.get(app) {
       Some(stream) => {
@@ -79,11 +90,18 @@ impl StreamRegistry {
   }
 }
 
+#[derive(PartialEq)]
+pub enum StreamState {
+  Pause,
+  Play
+}
+
 pub struct Stream {
   pipeline: Pipeline,
   video: AppSrc,
   audio: AppSrc,
-  session: String
+  session: String,
+  state: StreamState
 }
 
 impl Stream {
@@ -135,11 +153,12 @@ impl Stream {
     };
     audio.set_format(Format::Time);
 
-    let stream = Stream {
+    let mut stream = Stream {
       pipeline: pipeline,
       video: video,
       audio: audio,
-      session: session.to_string()
+      session: session.to_string(),
+      state: StreamState::Pause
     };
 
     stream.play();
@@ -151,27 +170,37 @@ impl Stream {
     return &self.session;
   }
 
-  pub fn play(&self) {
+  pub fn play(&mut self) {
+    if self.state == StreamState::Play {
+      return;
+    }
+
     match self.pipeline.set_state(Playing) {
       Err(error) => {
         eprintln!("Failed to set pipeline state to Playing - {}", error);
       },
-      _ => {}
+      Ok(_) => {
+        self.state = StreamState::Play;
+      }
     }
   }
 
-  pub fn pause(&self) {
+  pub fn pause(&mut self) {
+    if self.state == StreamState::Pause {
+      return;
+    }
+
     match self.pipeline.set_state(Paused) {
       Err(error) => {
         eprintln!("Failed to set pipeline state to Playing - {}", error);
       },
-      _ => {}
+      Ok(_) => {
+        self.state = StreamState::Pause;
+      }
     }
   }
 
   pub fn on_video_frame(&self, data: Vec<u8>, dts: u64, pts: u64) {
-    println!("on_video_frame");
-
     let mut buffer = Buffer::from_slice(data);
 
     let buffer_mut = match buffer.get_mut() {
@@ -194,8 +223,6 @@ impl Stream {
   }
 
   pub fn on_video_header(&self, data: Vec<u8>) {
-    println!("on_video_header");
-
     let codec_data = Buffer::from_slice(data);
     let caps = Caps::builder("video/x-h264").field("stream-format", "avc").field("alignment", "au").field("codec_data", codec_data).build();
 
@@ -203,8 +230,6 @@ impl Stream {
   }
 
   pub fn on_video_end(&self) {
-    println!("on_video_end");
-
     match self.video.end_of_stream() {
       Err(error) => {
         eprintln!("Failed to close video stream - {}", error);
@@ -214,8 +239,6 @@ impl Stream {
   }
 
   pub fn on_audio_frame(&self, data: Vec<u8>, pts: u64) {
-    println!("on_audio_frame");
-
     let mut buffer = Buffer::from_slice(data);
 
     let buffer_mut = match buffer.get_mut() {
@@ -237,8 +260,6 @@ impl Stream {
   }
 
   pub fn on_audio_header(&self, data: Vec<u8>) {
-    println!("on_audio_header");
-
     let codec_data = Buffer::from_slice(data);
     let caps = Caps::builder("audio/mpeg").field("mpegversion", 4i32).field("stream_format", "raw").field("codec_data", codec_data).build();
 
@@ -246,8 +267,6 @@ impl Stream {
   }
 
   pub fn on_audio_end(&self) {
-    println!("on_audio_end");
-
     match self.audio.end_of_stream() {
       Err(error) => {
         eprintln!("Failed to close audio stream - {}", error);
