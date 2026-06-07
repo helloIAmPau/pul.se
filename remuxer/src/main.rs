@@ -8,21 +8,10 @@ use rtmp_rs::ServerConfig;
 
 use protocol::Protocol;
 use stream::Stream;
-use storage::Storage;
 use postgres::Postgres;
 
 #[tokio::main]
 async fn main() {
-  let storage = Storage::new();
-  match storage.create("streams").await {
-    Err(error) => {
-      eprintln!("Unable to create default storage bucket - {}", error);
-
-      return;
-    },
-    _ => {}
-  };
-
   match Stream::warmup() {
     Err(error) => {
       eprintln!("Unable to start pipeline framework - {}", error);

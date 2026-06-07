@@ -1,4 +1,4 @@
-import { addStream, streams, stream, regenerateKey, updateName, deleteStream } from './streams';
+import { updateSettings, addStream, streams, stream, regenerateKey, updateName, deleteStream } from './streams';
 import { vods, vod } from './vods';
 import { lives, live } from './lives'
 
@@ -15,6 +15,7 @@ export default {
     addStream,
     updateName,
     regenerateKey,
+    updateSettings,
     deleteStream
   }
 };

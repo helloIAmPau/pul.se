@@ -1,5 +1,8 @@
 use std::collections::HashMap;
 use std::fmt;
+use std::env::var;
+
+use serde_json::Value;
 
 use gstreamer::State::Paused;
 use gstreamer::State::Playing;
@@ -96,6 +99,75 @@ pub enum StreamState {
   Play
 }
 
+pub struct StreamSettings {
+  value: Value
+}
+
+impl StreamSettings {
+  pub fn new(value: Value) -> StreamSettings {
+    return StreamSettings {
+      value: value
+    };
+  }
+  
+  pub fn storage_access_key(&self) -> String {
+    let default_storage_key = match var("STORAGE_ACCESS_KEY") {
+      Ok(value) => value,
+      Err(_) => "".to_string()
+    };
+
+    return self.value["storage"]["access_key"].as_str().unwrap_or(&default_storage_key).to_string();
+  }
+
+  pub fn storage_secret_key(&self) -> String {
+    let default_secret_key = match var("STORAGE_SECRET_KEY") {
+      Ok(value) => value,
+      Err(_) => "".to_string()
+    };
+
+    return self.value["storage"]["secret_key"].as_str().unwrap_or(&default_secret_key).to_string();
+  }
+
+  pub fn storage_host(&self) -> String {
+    let default_host = match var("STORAGE_HOST") {
+      Ok(value) => value,
+      Err(_) => "http://storage:9000".to_string()
+    };
+
+    return self.value["storage"]["host"].as_str().unwrap_or(&default_host).to_string();
+  }
+
+  pub fn storage_region(&self) -> String {
+    let default_region = match var("STORAGE_REGION") {
+      Ok(value) => value,
+      Err(_) => "us-east-1".to_string()
+    };
+
+    return self.value["storage"]["region"].as_str().unwrap_or(&default_region).to_string();
+  }
+
+  pub fn storage_bucket(&self) -> String {
+    let default_bucket = match var("STORAGE_BUCKET") {
+      Ok(value) => value,
+      Err(_) => "streams".to_string()
+    };
+
+    return self.value["storage"]["bucket"].as_str().unwrap_or(&default_bucket).to_string();
+  }
+
+  pub fn keyframe_interval(&self) -> u64 {
+    return self.value["keyframe_interval"].as_u64().unwrap_or(1);
+  }
+
+  pub fn gop(&self) -> u64 {
+    return 60 * self.keyframe_interval();
+  }
+
+  pub fn value(&self) -> &Value {
+    return &self.value;
+  }
+}
+
 pub struct Stream {
   pipeline: Pipeline,
   video: AppSrc,
@@ -109,8 +181,19 @@ impl Stream {
     return init();
   }
 
-  pub fn new(session: &str) -> Result<Self, StreamError> {
-    let pipeline_definition = format!("appsrc name=video_src format=time is-live=true ! h264parse ! nvh264dec ! videoconvert ! nvh264enc gop-size=60 ! h264parse ! sink.video appsrc name=audio_src format=time is-live=true ! aacparse ! sink.audio awss3hlssink name=sink bucket=\"streams\" key-prefix=\"{0}\" access-key=\"{1}\" secret-access-key=\"{2}\" force-path-style=true region=\"us-east-1\" endpoint-uri=\"http://storage:9000\" hlssink::playlist-length=0 hlssink::max-files=0 hlssink::target-duration=1", session, Storage::get_key(), Storage::get_secret());
+  pub async fn new(session: &str, settings: StreamSettings) -> Result<Self, StreamError> {
+    let storage = Storage::new(&settings);
+    match storage.create(&settings.storage_bucket()).await {
+      Err(error) => {
+        return Err(StreamError::new(StreamErrorKind::Pipeline, &error.to_string()));
+      },
+      _ => {}
+    };
+
+    let pipeline_definition = format!("appsrc name=video_src format=time is-live=true ! h264parse ! nvh264dec ! videoconvert ! nvh264enc gop-size={7} ! h264parse ! sink.video appsrc name=audio_src format=time is-live=true ! aacparse ! sink.audio awss3hlssink name=sink bucket=\"{5}\" key-prefix=\"{0}\" access-key=\"{1}\" secret-access-key=\"{2}\" force-path-style=true region=\"{4}\" endpoint-uri=\"{3}\" hlssink::playlist-length=0 hlssink::max-files=0 hlssink::target-duration={6}", session, settings.storage_access_key(), settings.storage_secret_key(), settings.storage_host(), settings.storage_region(), settings.storage_bucket(), settings.keyframe_interval(), settings.gop());
+
+    println!("Created pipeline: {}", pipeline_definition);
+
     let pipeline_element = match launch(&pipeline_definition) {
       Ok(element) => element,
       Err(error) => {

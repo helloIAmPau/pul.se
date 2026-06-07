@@ -38,6 +38,8 @@ create table if not exists streams (
   deleted boolean not null default false
 );
 
+alter table streams add column if not exists settings jsonb not null default '{}';
+
 drop trigger if exists on_streams_change on streams;
 create trigger on_streams_change
 after insert or update or delete on streams
@@ -51,6 +53,8 @@ create table if not exists events (
   event text not null,
   timestamp timestamp not null default now()
 );
+
+alter table events add column if not exists meta jsonb not null default '{}';
 
 drop trigger if exists on_events_change on events;
 create trigger on_events_change

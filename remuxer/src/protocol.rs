@@ -16,6 +16,7 @@ use uuid::Uuid;
 
 use crate::postgres::Postgres;
 use crate::stream::Stream;
+use crate::stream::StreamSettings;
 use crate::stream::StreamRegistry;
 
 #[derive(Debug)]
@@ -170,7 +171,7 @@ impl RtmpHandler for Protocol {
       }
     };
 
-    let name: String = match self.db.query("select owner, name from streams where app = $1 and key = $2 and deleted = false", &[ &app, &key ]).await {
+    let (name, settings): (String, StreamSettings) = match self.db.query("select owner, name, settings from streams where app = $1 and key = $2 and deleted = false", &[ &app, &key ]).await {
       Ok(rows) => {
         if rows.len() != 1 {
           eprintln!("Invalid key received for app name {}", context.app);
@@ -179,7 +180,7 @@ impl RtmpHandler for Protocol {
         }
 
         println!("Stream {} validated. Allocating pipeline", context.app);
-        rows[0].get("name")
+        (rows[0].get("name"), StreamSettings::new(rows[0].get("settings")))
       },
       Err(error) => {
         eprintln!("Error validating connection - {}", error);
@@ -188,7 +189,7 @@ impl RtmpHandler for Protocol {
       }
     };
 
-    let session: Uuid = match self.db.query("insert into events (app, event, name) values ($1, 'PLAY', $2) returning uid", &[ &app, &name ]).await {
+    let session: Uuid = match self.db.query("insert into events (app, event, name, meta) values ($1, 'PLAY', $2, $3) returning uid", &[ &app, &name, &settings.value() ]).await {
       Ok(rows) => {
         rows[0].get("uid")
       },
@@ -199,7 +200,7 @@ impl RtmpHandler for Protocol {
       }
     };
 
-    match Stream::new(&session.to_string()) {
+    match Stream::new(&session.to_string(), settings).await {
       Ok(stream) => {
         let mut registry = self.registry.lock().await;
         registry.add(&context.app, stream);

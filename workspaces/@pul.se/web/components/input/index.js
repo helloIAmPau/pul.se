@@ -4,7 +4,7 @@ import InputGroup from '../input-group';
 
 import { wrapper, icon_wrapper, input, clickable } from './styles.module.css';
 
-export default function Input({ value, label, readonly, icon, onClick }) {
+export default function Input({ value = '', label, readonly, icon, onClick, type, onChange, name }) {
   const iconElement = useMemo(function() {
     if(icon == null) {
       return;
@@ -26,7 +26,7 @@ export default function Input({ value, label, readonly, icon, onClick }) {
     <InputGroup label={ label }>
       <div className={ wrapper }>
         { iconElement }
-        <input className={ input } value={ value } readOnly={ readonly } />
+        <input className={ input } value={ value } readOnly={ readonly } type={ type } onChange={ onChange } name={ name } />
       </div>
     </InputGroup>
   );

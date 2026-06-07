@@ -3,6 +3,7 @@ scalar StreamState
 scalar Timestamp
 scalar URL
 scalar SortingDirection
+scalar JSON
 
 type Session {
   uid: UUID!,
@@ -22,16 +23,12 @@ type Stream {
   name: String!
   app: UUID!
   key: UUID!
+  settings: JSON!
 }
 
 type StreamPage {
   data: [ Stream ]!
   count: Int!
-}
-
-input NameInput {
-  app: UUID!
-  name: String!
 }
 
 input SortingInput {
@@ -57,7 +54,8 @@ type Query {
 
 type Mutation {
   addStream: Stream
-  updateName(name: NameInput!): Stream
+  updateName(app: UUID!, name: String!): Stream
   regenerateKey(app: UUID!): Stream
+  updateSettings(app: UUID!, settings: JSON!): Stream
   deleteStream(app: UUID!): Stream
 }

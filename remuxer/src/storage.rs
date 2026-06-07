@@ -7,7 +7,7 @@ use aws_sdk_s3::config::Builder;
 use aws_sdk_s3::types::CreateBucketConfiguration;
 use aws_sdk_s3::config::Region;
 
-use std::env::var;
+use crate::stream::StreamSettings;
 
 #[derive(Debug)]
 pub enum StorageErrorKind {
@@ -39,23 +39,9 @@ pub struct Storage {
 }
 
 impl Storage {
-  pub fn get_key() -> String {
-    return match var("STORAGE_ACCESS_KEY") {
-      Ok(value) => value,
-      Err(_) => "".to_string()
-    };
-  }
-
-  pub fn get_secret() -> String {
-    return match var("STORAGE_SECRET_KEY") {
-      Ok(value) => value,
-      Err(_) => "".to_string()
-    };
-  }
-
-  pub fn new() -> Self {
-    let credentials = Credentials::new(Self::get_key(), Self::get_secret(), None, None, "PULSE");
-    let s3_config = Builder::new().behavior_version(BehaviorVersion::latest()).region(Region::new("us-east-1")).endpoint_url("http://storage:9000").credentials_provider(credentials).force_path_style(true).build();
+  pub fn new(settings: &StreamSettings) -> Self {
+    let credentials = Credentials::new(settings.storage_access_key(), settings.storage_secret_key(), None, None, "PULSE");
+    let s3_config = Builder::new().behavior_version(BehaviorVersion::latest()).region(Region::new(settings.storage_region())).endpoint_url(settings.storage_host()).credentials_provider(credentials).force_path_style(true).build();
     let client = Client::from_conf(s3_config);
 
     return Storage {
