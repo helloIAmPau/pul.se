@@ -48,6 +48,8 @@ services:
       - 'POSTGRES_DB=${POSTGRES_DB}'
       - 'PULSE_CDN=${PULSE_CDN}'
       - 'JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}'
+      - 'STORAGE_ACCESS_KEY=${STORAGE_ACCESS_KEY}'
+      - 'STORAGE_SECRET_KEY=${STORAGE_SECRET_KEY}'
     networks:
       - 'frontend'
       - 'backend'

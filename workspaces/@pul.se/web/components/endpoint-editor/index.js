@@ -7,25 +7,38 @@ import { useStream } from '../../contexts/stream';
 import AppEditor from '../app-editor';
 import KeyEditor from '../key-editor';
 import Button from '../button';
-
-import { columns, column, wrapper, controls, section } from './styles.module.css';
+import Columns from '../columns';
+import SettingsSectionInputsLayout from '../settings-section-inputs-layout';
+import SettingsSectionControlsLayout from '../settings-section-controls-layout';
 
 export default function EndopointEditor() {
-  const { regenerateKey } = useStream();
+  const { stream } = useStream();
+
+  const regenerateKeyMutation = useGraphql(`
+mutation($app: UUID!) {
+  regenerateKey(app: $app) {
+    key
+  }
+}
+  `);
+
+  const regenerateKey = useCallback(function() {
+    regenerateKeyMutation({ app: stream.app });
+  }, [ regenerateKeyMutation, stream ]);
 
   return (
-    <div className={ wrapper }>
-      <div className={ columns }>
-        <div className={ column }>
+    <SettingsSectionInputsLayout>
+      <Columns>
+        <div>
           <AppEditor />
         </div>
-        <div className={ column }>
+        <div>
           <KeyEditor />
         </div>
-      </div>
-      <div className={ controls }>
+      </Columns>
+      <SettingsSectionControlsLayout>
         <Button onClick={ regenerateKey } accent><ArrowsCounterClockwiseIcon weight='bold' /> Regenerate Key</Button>
-      </div>
-    </div>
+      </SettingsSectionControlsLayout>
+    </SettingsSectionInputsLayout>
   );
 };

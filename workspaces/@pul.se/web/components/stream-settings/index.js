@@ -2,14 +2,12 @@ import { StreamProvider } from '../../contexts/stream';
 
 import Section from '../section';
 import PaginationHeader from '../pagination-header';
-import Heading from '../heading';
 import TitleEditor from '../title-editor';
 import EndpointEditor from '../endpoint-editor';
 import VodTable from '../vod-table';
-import Hr from '../hr';
 import DeleteStreamButton from '../delete-stream-button';
-
-import { section, section_title } from './styles.module.css';
+import SettingsEditor from '../settings-editor';
+import SettingsSection from '../settings-section';
 
 export default function StreamSettings() {
   return (
@@ -19,22 +17,15 @@ export default function StreamSettings() {
       <VodTable />
 
       <StreamProvider>
-        <div className={ section }>
-          <div className={ section_title }>
-            <Heading secondary>Settings</Heading>
-            <Hr />
-          </div>
+        <SettingsSection title='Settings'>
           <TitleEditor />
           <EndpointEditor />
-        </div>
+          <SettingsEditor />
+        </SettingsSection>
 
-        <div className={ section }>
-          <div className={ section_title }>
-            <Heading secondary>Danger Zone!</Heading>
-            <Hr />
-          </div>
+        <SettingsSection title='Danger Zone!'>
           <DeleteStreamButton />
-        </div>
+        </SettingsSection>
       </StreamProvider>
     </Section>
   );

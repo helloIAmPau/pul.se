@@ -8,13 +8,13 @@ import Input from '../input';
 
 export default function KeyEditor() {
   const { copy } = useClipboard();
-  const { key } = useStream();
+  const { stream } = useStream();
 
   const onClick = useCallback(function() {
-    copy(key);
-  }, [ key, copy ]);
+    copy(stream.key);
+  }, [ stream, copy ]);
 
   return (
-    <Input onClick={ onClick } label='Key' icon={ <CopySimpleIcon /> } value={ key } readonly />
+    <Input onClick={ onClick } label='Key' icon={ <CopySimpleIcon /> } value={ stream.key } readonly />
   );
 };

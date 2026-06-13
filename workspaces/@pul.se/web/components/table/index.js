@@ -52,7 +52,7 @@ export const Table = function({ title, columns, onData, watch, controls }) {
   const { socket } = useBroadcast();
 
   useLayoutEffect(function() {
-    const update = function() {
+    const refresh = function() {
       onData(state).then(function(cursor) {
         setRows(cursor.data);
         setPages(Math.ceil(cursor.count / state.limit));
@@ -60,18 +60,18 @@ export const Table = function({ title, columns, onData, watch, controls }) {
     };
 
     if(watch == null) {
-      return update();
+      return refresh();
     }
 
     if(socket == null) {
       return;
     }
 
-    socket.on(watch, update);
-    update();
+    socket.on(watch, refresh);
+    refresh();
     
     return function() {
-      socket.off(watch, update);
+      socket.off(watch, refresh);
     };
   }, [ onData, state, watch, socket ]);
 

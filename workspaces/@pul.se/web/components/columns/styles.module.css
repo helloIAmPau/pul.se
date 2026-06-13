@@ -1,0 +1,9 @@
+.columns {
+  display: flex;
+  align-items: center;
+  gap: var(--base-unit);
+
+  & > div {
+    flex: 1;
+  }
+}
