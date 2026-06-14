@@ -10,7 +10,7 @@ from rust:1.94.1-slim as builder
 
 ENV GST_PLUGIN_PATH=/gst-plugins
 copy --from=plugin-builder /out /gst-plugins
-run apt update && apt install -y libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-bad libssl-dev
+run apt update && apt install -y libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav libssl-dev
 
 run cargo install cargo-watch
 
@@ -25,7 +25,7 @@ cmd cd /source && cargo watch -x run
 
 from debian:stable-slim 
 
-run apt update && apt install -y libgstreamer1.0 libgstreamer-plugins-base1.0 gstreamer1.0-plugins-bad
+run apt update && apt install -y libgstreamer1.0 libgstreamer-plugins-base1.0 gstreamer1.0-plugins-bad gstreamer1.0-plugins-ugly gstreamer1.0-libav
 
 ENV GST_PLUGIN_PATH=/gst-plugins
 copy --from=plugin-builder /out /gst-plugins
