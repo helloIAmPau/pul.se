@@ -2,6 +2,7 @@ use std::fmt;
 
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use std::collections::HashMap;
 
 use rtmp_rs::RtmpHandler;
 use rtmp_rs::AuthResult;
@@ -11,6 +12,7 @@ use rtmp_rs::session::SessionContext;
 use rtmp_rs::session::StreamContext;
 use rtmp_rs::protocol::message::ConnectParams;
 use rtmp_rs::protocol::message::PublishParams;
+use rtmp_rs::amf::AmfValue;
 
 use uuid::Uuid;
 
@@ -212,6 +214,27 @@ impl RtmpHandler for Protocol {
         eprintln!("Error launching pipeline - {}", error);
 
         return AuthResult::Reject("Server Error".to_string());
+      }
+    };
+  }
+
+  async fn on_metadata(&self, context: &StreamContext, metadata: &HashMap<String, AmfValue>) {
+    let fps = match metadata.get("framerate") {
+      Some(AmfValue::Number(fps)) => *fps as u64,
+      _ => {
+        return;
+      }
+    };
+
+    let registry = self.registry.lock().await;
+    match registry.get(&context.session.app) {
+      Ok(stream) => {
+        stream.update_framerate(fps);
+      },
+      Err(_) => {
+        eprintln!("Invalid stream name {}", context.session.app);
+
+        return;
       }
     };
   }
