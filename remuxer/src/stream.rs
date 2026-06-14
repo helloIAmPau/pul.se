@@ -18,6 +18,8 @@ use gstreamer::prelude::ElementExt;
 use gstreamer::prelude::Cast;
 use gstreamer::prelude::GstBinExt;
 
+use gfxinfo::active_gpu;
+
 use gstreamer_app::AppSrc;
 
 use crate::storage::Storage;
@@ -163,6 +165,13 @@ impl StreamSettings {
     return 60 * self.keyframe_interval();
   }
 
+  pub fn transcoder_type(&self) -> String {
+    return match var("TRANSCODER_TYPE") {
+      Ok(value) => value,
+      Err(_) => "GPU".to_string()
+    };
+  }
+
   pub fn value(&self) -> &Value {
     return &self.value;
   }
@@ -190,7 +199,32 @@ impl Stream {
       _ => {}
     };
 
-    let pipeline_definition = format!("appsrc name=video_src format=time is-live=true ! h264parse ! nvh264dec ! videoconvert ! nvh264enc gop-size={7} ! h264parse ! sink.video appsrc name=audio_src format=time is-live=true ! aacparse ! sink.audio awss3hlssink name=sink bucket=\"{5}\" key-prefix=\"{0}\" access-key=\"{1}\" secret-access-key=\"{2}\" force-path-style=true region=\"{4}\" endpoint-uri=\"{3}\" hlssink::playlist-length=0 hlssink::max-files=0 hlssink::target-duration={6}", session, settings.storage_access_key(), settings.storage_secret_key(), settings.storage_host(), settings.storage_region(), settings.storage_bucket(), settings.keyframe_interval(), settings.gop());
+    let transcoder_type = settings.transcoder_type();
+    let (encoder, decoder): (String, String) = match active_gpu() {
+      Ok(gpu) => {
+        let vendor = gpu.vendor();
+        println!("GPU vendor: {0}", vendor);
+
+        if transcoder_type == "GPU" && vendor == "Nvidia" {
+          println!("Nvidia GPU detected. Using accelerated encoder/decoder");
+
+          (format!("nvh264dec"), format!("nvh264enc gop-size={0}", settings.gop()))
+        } else {
+          println!("No supported GPU detected. Fallbacking on software transcoding");
+
+          (format!("avdec_h264"), format!("x264enc key-int-max={0}", settings.gop()))
+        }
+      },
+      Err(_) => {
+        if transcoder_type == "GPU" {
+          println!("Error detecting GPU. Fallbacking on software transcoding");
+        }
+
+        (format!("avdec_h264"), format!("x264enc key-int-max={0}", settings.gop()))
+      }
+    };
+
+    let pipeline_definition = format!("appsrc name=video_src format=time is-live=true ! h264parse ! {7} ! videoconvert ! {8} ! h264parse ! sink.video appsrc name=audio_src format=time is-live=true ! aacparse ! sink.audio awss3hlssink name=sink bucket=\"{5}\" key-prefix=\"{0}\" access-key=\"{1}\" secret-access-key=\"{2}\" force-path-style=true region=\"{4}\" endpoint-uri=\"{3}\" hlssink::playlist-length=0 hlssink::max-files=0 hlssink::target-duration={6}", session, settings.storage_access_key(), settings.storage_secret_key(), settings.storage_host(), settings.storage_region(), settings.storage_bucket(), settings.keyframe_interval(), encoder, decoder);
 
     println!("Created pipeline: {}", pipeline_definition);
 
