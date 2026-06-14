@@ -17,6 +17,7 @@ use gstreamer::Caps;
 use gstreamer::prelude::ElementExt;
 use gstreamer::prelude::Cast;
 use gstreamer::prelude::GstBinExt;
+ use gstreamer::prelude::ObjectExt;
 
 use gfxinfo::active_gpu;
 
@@ -182,7 +183,9 @@ pub struct Stream {
   video: AppSrc,
   audio: AppSrc,
   session: String,
-  state: StreamState
+  state: StreamState,
+  vendor: String,
+  settings: StreamSettings
 }
 
 impl Stream {
@@ -199,8 +202,9 @@ impl Stream {
       _ => {}
     };
 
+    let default_fps = 60;
     let transcoder_type = settings.transcoder_type();
-    let (encoder, decoder): (String, String) = match active_gpu() {
+    let (decoder, encoder, vendor): (String, String, String) = match active_gpu() {
       Ok(gpu) => {
         let vendor = gpu.vendor();
         println!("GPU vendor: {0}", vendor);
@@ -208,11 +212,11 @@ impl Stream {
         if transcoder_type == "GPU" && vendor == "Nvidia" {
           println!("Nvidia GPU detected. Using accelerated encoder/decoder");
 
-          (format!("nvh264dec"), format!("nvh264enc gop-size={0}", settings.gop()))
+          (format!("nvh264dec"), format!("nvh264enc name=video_encoder gop-size={0}", default_fps * settings.keyframe_interval()), vendor.to_string())
         } else {
           println!("No supported GPU detected. Fallbacking on software transcoding");
 
-          (format!("avdec_h264"), format!("x264enc key-int-max={0}", settings.gop()))
+          (format!("avdec_h264"), format!("x264enc name=video_encoder key-int-max={0}", default_fps * settings.keyframe_interval()), "CPU".to_string())
         }
       },
       Err(_) => {
@@ -220,11 +224,11 @@ impl Stream {
           println!("Error detecting GPU. Fallbacking on software transcoding");
         }
 
-        (format!("avdec_h264"), format!("x264enc key-int-max={0}", settings.gop()))
+        (format!("avdec_h264"), format!("x264enc name=video_encoder key-int-max={0}", default_fps * settings.keyframe_interval()), "CPU".to_string())
       }
     };
 
-    let pipeline_definition = format!("appsrc name=video_src format=time is-live=true ! h264parse ! {7} ! videoconvert ! {8} ! h264parse ! sink.video appsrc name=audio_src format=time is-live=true ! aacparse ! sink.audio awss3hlssink name=sink bucket=\"{5}\" key-prefix=\"{0}\" access-key=\"{1}\" secret-access-key=\"{2}\" force-path-style=true region=\"{4}\" endpoint-uri=\"{3}\" hlssink::playlist-length=0 hlssink::max-files=0 hlssink::target-duration={6}", session, settings.storage_access_key(), settings.storage_secret_key(), settings.storage_host(), settings.storage_region(), settings.storage_bucket(), settings.keyframe_interval(), encoder, decoder);
+    let pipeline_definition = format!("appsrc name=video_src format=time is-live=true ! h264parse ! {8} ! videoconvert ! {7} ! h264parse ! sink.video appsrc name=audio_src format=time is-live=true ! aacparse ! sink.audio awss3hlssink name=sink bucket=\"{5}\" key-prefix=\"{0}\" access-key=\"{1}\" secret-access-key=\"{2}\" force-path-style=true region=\"{4}\" endpoint-uri=\"{3}\" hlssink::playlist-length=0 hlssink::max-files=0 hlssink::target-duration={6}", session, settings.storage_access_key(), settings.storage_secret_key(), settings.storage_host(), settings.storage_region(), settings.storage_bucket(), settings.keyframe_interval(), encoder, decoder);
 
     println!("Created pipeline: {}", pipeline_definition);
 
@@ -275,7 +279,9 @@ impl Stream {
       video: video,
       audio: audio,
       session: session.to_string(),
-      state: StreamState::Pause
+      state: StreamState::Pause,
+      vendor: vendor,
+      settings: settings
     };
 
     stream.play();
@@ -285,6 +291,27 @@ impl Stream {
 
   pub fn get_session(&self) -> &String {
     return &self.session;
+  }
+
+  pub fn update_framerate(&self, value: u64) {
+    println!("Updating encoder framerate to {}", value);
+
+    let encoder = match self.pipeline.by_name("video_encoder") {
+      None => {
+        eprintln!("Failed to retrieve current video encoder");
+
+        return;
+      },
+      Some(encoder) => encoder
+    };
+
+    if self.vendor == "Nvidia" {
+      encoder.set_property("gop-size", (value * self.settings.keyframe_interval()) as i32);
+
+      return;
+    }
+
+    encoder.set_property("key-int-max", (value * self.settings.keyframe_interval()) as u32);
   }
 
   pub fn play(&mut self) {
