@@ -9,7 +9,7 @@
 ### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) (v2)
-- An NVIDIA GPU with the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) (required by **remuxer** for hardware-accelerated encoding)
+- An NVIDIA GPU with the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html) (recommended for hardware-accelerated encoding; CPU fallback available via `TRANSCODER_TYPE=CPU`)
 - A [Google Cloud project](https://console.cloud.google.com/) with OAuth 2.0 credentials (Client ID + Secret)
 - An RSA key pair for JWT signing (see below)
 
@@ -41,6 +41,7 @@ Copy `.env.develop` as a starting point and fill in every value:
 | `JWT_PUBLIC_KEY` | Base64-encoded RSA public key (for verifying JWTs) |
 | `GOOGLE_OAUTH_CLIENTID` | Google OAuth 2.0 client ID |
 | `GOOGLE_OAUTH_CLIENTSECRET` | Google OAuth 2.0 client secret |
+| `TRANSCODER_TYPE` | Set to `GPU` (default) for NVIDIA hardware-accelerated encoding, or `CPU` for software-based encoding |
 
 In Google Cloud Console, add `<PULSE_HOSTNAME>/auth/callback` as an authorised redirect URI for your OAuth client.
 
@@ -135,23 +136,28 @@ npm run migrate
 ### `remuxer/`
 A high-performance RTMP server built in Rust. It uses GStreamer to transcode incoming RTMP bitstreams into HLS segments (`.ts`) and playlists (`.m3u8`). It handles:
 - **RTMP Ingest**: Listening on port 1935.
-- **Transcoding**: Hardware-accelerated (NVIDIA) HLS segmenting.
+- **Transcoding**: Supports both hardware-accelerated (NVIDIA `nvh264enc`/`nvh264dec`) and software-based (`x264enc`/`avdec_h264`) encoding, selectable via the `TRANSCODER_TYPE` environment variable. GPU vendor is auto-detected at startup.
+- **Dynamic Framerate Detection**: Reads the incoming stream's framerate from RTMP `on_metadata` and dynamically adjusts the GOP (Group of Pictures) size to match.
+- **Infinite HLS Playlists**: Generates playlists with no segment rotation limit, allowing indefinite streaming sessions.
 - **S3 Uploads**: Writing segments directly to the `storage` service.
-- **State Management**: Recording `PLAY` and `STOP` events in PostgreSQL.
+- **State Management**: Recording `PLAY` and `STOP` events in PostgreSQL, with per-session metadata and stream settings snapshots.
 
 ### `@pul.se/web`
 The main frontend application built with React 19 and served with SSR. It includes:
-- **Landing Page**: Information for new users.
-- **Dashboard**: A real-time management dashboard for streams, keys, and RTMP endpoints.
-- **Theater**: A custom HLS player (using `hls.js`) for watching live and archived content.
-- **Settings**: Per-stream configuration, including title management and stream key regeneration.
+- **Landing Page**: Public-facing homepage with hero section, feature showcase, and hosting information.
+- **Dashboard**: A real-time management dashboard for streams with paginated, sortable, and searchable tables. Includes a dedicated button for creating new streams.
+- **Theater**: A custom HLS player (using `hls.js`) for watching live and archived content. Features automatic error recovery on manifest parsing failures and a minimum 2-second buffer before playback.
+- **Live & VOD**: Separate components for live stream viewing and on-demand playback of archived recordings.
+- **Stream Settings**: Per-stream configuration page with title editing, RTMP endpoint display, stream key regeneration, broadcast settings (storage and keyframe interval), and stream deletion.
+- **Real-time Updates**: Instant UI updates via WebSocket connection to the `broadcast` service — no page refresh required.
 
 ### `@pul.se/graphql`
 The data API layer. It provides a GraphQL schema for:
-- **Live Streams**: Active broadcast sessions.
-- **VODs**: Paginated archived recordings with metadata.
-- **User Streams**: Paginated stream configurations (keys, names, apps).
-- **Management**: Mutations for adding, renaming, and deleting streams, as well as regenerating stream keys.
+- **Live Streams**: Querying currently active broadcasts (`lives`, `live`).
+- **VODs**: Paginated archived recordings with metadata (`vods`, `vod`).
+- **User Streams**: Paginated stream configurations with search, sorting, and filtering.
+- **Management**: Mutations for creating, renaming, and deleting streams, regenerating stream keys, and updating per-stream broadcast settings (storage configuration, keyframe interval).
+- **Pagination**: Built-in support for limit/offset pagination, column sorting, and text search across all list queries.
 
 ### `@pul.se/auth`
 Handles authentication via Google OAuth 2.0. It issues RS256-signed JWTs stored in `httpOnly` cookies, which are then verified by other services using the public key.
@@ -204,16 +210,21 @@ A shared HTTP client wrapper that handles fetch requests, JSON parsing, and Grap
 - `name` (TEXT): Display name for the stream.
 - `owner` (UUID): FK to `users.uid`.
 - `deleted` (BOOL): Soft-delete flag.
+- `settings` (JSONB): Per-stream broadcast configuration (storage credentials, keyframe interval).
 
 ### `events`
 - `uid` (UUID): Session identifier for a specific broadcast.
 - `app` (UUID): FK to `streams.app`.
 - `name` (TEXT): Title of the broadcast session.
 - `event` (TEXT): Event type (`PLAY` | `STOP`).
+- `meta` (JSONB): Session metadata (snapshot of stream settings at broadcast time).
 - `timestamp` (TIMESTAMP): Time of the event.
 
 ### `sessions` (View)
-A convenience view that aggregates `events` by `app` and `uid`, joining with `streams` to provide a unified broadcast record.
+A convenience view that aggregates `events` by `app` and `uid`, joining with `streams` to provide a unified broadcast record including stream state (`PLAY`/`STOP`).
+
+### Database Triggers
+A PostgreSQL `on_change()` trigger function fires on `INSERT`, `UPDATE`, and `DELETE` on the `streams` and `events` tables. It sends a `pg_notify('on_change', ...)` payload containing the operation type, target room (stream owner), and row data — powering real-time updates via the `broadcast` service.
 
 ---
 
